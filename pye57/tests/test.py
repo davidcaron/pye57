@@ -177,4 +177,23 @@ def test_read_raw(e57_path):
 
 
 def test_constants():
+    assert libe57.CHECKSUM_POLICY_NONE == 0
     assert libe57.CHECKSUM_POLICY_SPARSE == 25
+    assert libe57.CHECKSUM_POLICY_HALF == 50
+    assert libe57.CHECKSUM_POLICY_ALL == 100
+    assert libe57.E57_INT8_MIN == -128
+    assert libe57.E57_INT8_MAX == 127
+    assert libe57.E57_INT16_MIN == -32768
+    assert libe57.E57_INT16_MAX == 32767
+    assert libe57.E57_INT32_MIN == -2147483647 - 1
+    assert libe57.E57_INT32_MAX == 2147483647
+    assert libe57.E57_INT64_MIN == -9223372036854775807 - 1
+    assert libe57.E57_INT64_MAX == 9223372036854775807
+    assert libe57.E57_UINT8_MIN == 0
+    assert libe57.E57_UINT8_MAX == 255
+    assert libe57.E57_UINT16_MIN == 0
+    assert libe57.E57_UINT16_MAX == 65535
+    assert libe57.E57_UINT32_MIN == 0
+    assert libe57.E57_UINT32_MAX == 4294967295
+    assert libe57.E57_UINT64_MIN == 0
+    assert libe57.E57_UINT64_MAX == 18446744073709551615
