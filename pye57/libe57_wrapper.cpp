@@ -4,6 +4,7 @@
 #include <pybind11/numpy.h>
 
 #include <E57Foundation.h>
+#include <Common.h>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -44,6 +45,10 @@ PYBIND11_MODULE(libe57, m) {
     }
     });
 
+    m.attr("E57_FORMAT_MAJOR") = E57_FORMAT_MAJOR;
+    m.attr("E57_FORMAT_MINOR") = E57_FORMAT_MINOR;
+    m.attr("E57_LIBRARY_ID") = E57_LIBRARY_ID;
+    m.attr("E57_V1_0_URI") = "http://www.astm.org/COMMIT/E57/2010-e57-v1.0";
     m.attr("CHECKSUM_POLICY_NONE") = CHECKSUM_POLICY_NONE;
     m.attr("CHECKSUM_POLICY_SPARSE") = CHECKSUM_POLICY_SPARSE;
     m.attr("CHECKSUM_POLICY_HALF") = CHECKSUM_POLICY_HALF;
@@ -169,7 +174,27 @@ PYBIND11_MODULE(libe57, m) {
     cls_StructureNode.def("isDefined", &StructureNode::isDefined, "pathName"_a);
     cls_StructureNode.def("get", py::overload_cast<int64_t>(&StructureNode::get, py::const_), "index"_a);
     cls_StructureNode.def("get", py::overload_cast<const std::string &>(&StructureNode::get, py::const_), "pathName"_a);
-    cls_StructureNode.def("set", &StructureNode::set, "pathName"_a, "n"_a);
+    cls_StructureNode.def("set", [](StructureNode &node, const std::string &pathName, StructureNode &n){
+        node.set(pathName, n);
+    }, "pathName"_a, "n"_a);
+    cls_StructureNode.def("set", [](StructureNode &node, const std::string &pathName, VectorNode &n){
+        node.set(pathName, n);
+    }, "pathName"_a, "n"_a);
+    cls_StructureNode.def("set", [](StructureNode &node, const std::string &pathName, CompressedVectorNode &n){
+        node.set(pathName, n);
+    }, "pathName"_a, "n"_a);
+    cls_StructureNode.def("set", [](StructureNode &node, const std::string &pathName, IntegerNode &n){
+        node.set(pathName, n);
+    }, "pathName"_a, "n"_a);
+    cls_StructureNode.def("set", [](StructureNode &node, const std::string &pathName, ScaledIntegerNode &n){
+        node.set(pathName, n);
+    }, "pathName"_a, "n"_a);
+    cls_StructureNode.def("set", [](StructureNode &node, const std::string &pathName, FloatNode &n){
+        node.set(pathName, n);
+    }, "pathName"_a, "n"_a);
+    cls_StructureNode.def("set", [](StructureNode &node, const std::string &pathName, StringNode &n){
+        node.set(pathName, n);
+    }, "pathName"_a, "n"_a);
     cls_StructureNode.def(py::init<const e57::Node &>(), "n"_a);
     cls_StructureNode.def("isRoot", &StructureNode::isRoot);
     cls_StructureNode.def("parent", &StructureNode::parent);
