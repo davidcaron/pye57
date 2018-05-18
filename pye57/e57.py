@@ -19,11 +19,7 @@ class E57:
     def get_header(self, index):
         return ScanHeader(self.data3d[index])
 
-    def make_buffer(self,
-                    field_name,
-                    capacity,
-                    do_conversion=True,
-                    do_scaling=True):
+    def make_buffer(self, field_name, capacity, do_conversion=True, do_scaling=True):
         types = {
             "cartesianX": "d",
             "cartesianY": "d",
@@ -31,7 +27,7 @@ class E57:
             "intensity": "f",
             "rowIndex": "H",
             "columnIndex": "H",
-            "cartesianInvalidState": "?",
+            "cartesianInvalidState": "b",
         }
         if field_name not in types:
             raise ValueError("Unknown field name: %s" % field_name)
@@ -43,6 +39,15 @@ class E57:
                                          do_conversion,
                                          do_scaling)
         return np_array, buffer
+
+    def make_buffers(self, field_names, capacity, do_conversion=True, do_scaling=True):
+        data = {}
+        buffers = libe57.VectorSourceDestBuffer()
+        for field in field_names:
+            d, b = self.make_buffer(field, capacity, do_conversion=do_conversion, do_scaling=do_scaling)
+            data[field] = d
+            buffers.append(b)
+        return data, buffers
 
     def read_scan_raw(self, index):
         header = self.get_header(index)
@@ -57,23 +62,29 @@ class E57:
 
         return data
 
-    def read_scan(self, index, intensity=False, color=False, row_column=False, transform=True):
+    def read_scan(self, index, intensity=False, colors=False, row_column=False, transform=True):
         header = self.get_header(index)
         n_points = header.point_count
-        buffers = libe57.VectorSourceDestBuffer()
-        x, b_x = self.make_buffer("cartesianX", n_points)
-        y, b_y = self.make_buffer("cartesianY", n_points)
-        z, b_z = self.make_buffer("cartesianZ", n_points)
-        is_valid, b_is_valid = self.make_buffer("cartesianInvalidState", n_points)
-        buffers.append(b_x)
-        buffers.append(b_y)
-        buffers.append(b_z)
-        buffers.append(b_is_valid)
+
+        fields = ["cartesianX", "cartesianY", "cartesianZ"]
+        if intensity:
+            fields.append("intensity")
+        if colors:
+            raise NotImplementedError
+        if row_column:
+            fields.append("rowIndex")
+            fields.append("columnIndex")
+        fields.append("cartesianInvalidState")
+
+        data, buffers = self.make_buffers(fields, n_points)
         data_reader = header.points.reader(buffers)
         data_reader.read()
 
-        xyz = np.array([x[is_valid], y[is_valid], z[is_valid]])
-        del x, y, z
+        valid = data["cartesianInvalidState"].astype("?")
+
+        xyz = np.array([data["cartesianX"][valid], data["cartesianY"][valid], data["cartesianZ"][valid]])
+
+        del valid, data
         if transform:
             rot, trans = header.rotation, header.translation
             xyz = np.dot(rot, xyz) + trans.reshape(3, 1)
