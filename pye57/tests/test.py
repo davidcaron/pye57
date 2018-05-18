@@ -17,22 +17,51 @@ def test_data(*args):
     return os.path.join("test_data", *args)
 
 
+def delete_retry(path):
+    try:
+        if os.path.exists(path):
+            os.remove(path)
+    except WindowsError:
+        time.sleep(0.1)
+        if os.path.exists(path):
+            os.remove(path)
+
+
 @pytest.fixture
 def e57_path():
     return test_data("test.e57")
 
 
 @pytest.fixture
+def temp_e57_write(request):
+    path = test_data("test_write.e57")
+    request.addfinalizer(lambda: delete_retry(path))
+    return path
+
+
+@pytest.fixture
 def image_and_points(e57_path):
-    f = libe57.ImageFile(e57_path, "r")
+    f = libe57.ImageFile(e57_path, mode="r")
     scan_0 = libe57.StructureNode(libe57.VectorNode(f.root().get("/data3D")).get(0))
     points = libe57.CompressedVectorNode(scan_0.get("points"))
     return f, points
 
 
 def test_open_imagefile(e57_path):
-    f = libe57.ImageFile(e57_path, "r")
+    f = libe57.ImageFile(e57_path, mode="r")
     assert f.isOpen()
+    f.close()
+
+
+def test_open_imagefile_write(temp_e57_write):
+    f = libe57.ImageFile(temp_e57_write, mode="w")
+    assert f.isOpen()
+    f.close()
+
+
+def test_e57_mode_error(temp_e57_write):
+    with pytest.raises(ValueError):
+        f = pye57.E57(temp_e57_write, mode="pasta")
 
 
 def test_get_structure_names(e57_path):
