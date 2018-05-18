@@ -176,6 +176,13 @@ def test_read_raw(e57_path):
     assert len(data["cartesianX"]) == header.point_count
 
 
+def test_read_write_raw_single_scan(e57_path, temp_e57_write):
+    e57 = pye57.E57(e57_path)
+    e57_write = pye57.E57(temp_e57_write, mode="w")
+    raw_data_0 = e57.read_scan_raw(0)
+    e57_write.write_scan_raw(raw_data_0)
+
+
 def test_constants():
     assert libe57.CHECKSUM_POLICY_NONE == 0
     assert libe57.CHECKSUM_POLICY_SPARSE == 25
