@@ -1,0 +1,11 @@
+*.pdb
+*.cache
+*.pytest_cache
+*.idea
+
+*.egg*
+*.pyd
+
+build
+dist
+
