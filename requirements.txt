@@ -1,2 +1,4 @@
 numpy
 pyquaternion
+pybind11 >= 2.2
+xerces-c

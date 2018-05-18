@@ -8,7 +8,6 @@ import sys
 import setuptools
 from setuptools.command.build_ext import build_ext
 from setuptools import find_packages, setup, Extension
-from distutils._msvccompiler import MSVCCompiler
 
 NAME = 'pye57'
 DESCRIPTION = 'Python .e57 files reader/writer'
@@ -23,6 +22,8 @@ INCLUDE = os.path.join(PYTHON_HOME, r"Library", "include")
 LIB_DIR = os.path.join(PYTHON_HOME, r"Library", "lib")
 
 REQUIRED = [
+    "numpy",
+    "pyquaternion"
 ]
 
 DEBUG = False
