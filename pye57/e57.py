@@ -6,6 +6,8 @@ from pye57 import ScanHeader
 
 class E57:
     def __init__(self, path, mode="r"):
+        if mode not in "rw":
+            raise ValueError("Only 'r' and 'w' modes are supported")
         self.image_file = libe57.ImageFile(path, mode)
 
     @property
