@@ -50,7 +50,8 @@ class E57:
         self.close()
 
     def close(self):
-        self.image_file.close()
+        if hasattr(self, "image_file"):
+            self.image_file.close()
 
     @property
     def root(self):
