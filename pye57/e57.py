@@ -5,6 +5,7 @@ from typing import Dict
 
 import numpy as np
 
+from pye57.__version__ import __version__
 from pye57 import libe57
 from pye57 import ScanHeader
 
@@ -147,7 +148,7 @@ class E57:
         scan_node = libe57.StructureNode(self.image_file)
         scan_node.set("guid", libe57.StringNode(self.image_file, str(uuid.uuid4())))
         scan_node.set("name", libe57.StringNode(self.image_file, name))
-        scan_node.set("description", libe57.StringNode(self.image_file, "Create by pye57"))
+        scan_node.set("description", libe57.StringNode(self.image_file, "pye57 v%s" % __version__))
 
         n_points = data["cartesianX"].shape[0]
 
