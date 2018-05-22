@@ -8,6 +8,19 @@ import numpy as np
 from pye57 import libe57
 from pye57 import ScanHeader
 
+POINT_TYPES = {
+    "cartesianX": "d",
+    "cartesianY": "d",
+    "cartesianZ": "d",
+    "intensity": "f",
+    "colorRed": "B",
+    "colorGreen": "B",
+    "colorBlue": "B",
+    "rowIndex": "H",
+    "columnIndex": "H",
+    "cartesianInvalidState": "b",
+}
+
 
 class E57:
     def __init__(self, path, mode="r"):
@@ -63,18 +76,10 @@ class E57:
         self.root.set("images2D", libe57.VectorNode(imf, True))
 
     def make_buffer(self, field_name, capacity, do_conversion=True, do_scaling=True):
-        types = {
-            "cartesianX": "d",
-            "cartesianY": "d",
-            "cartesianZ": "d",
-            "intensity": "f",
-            "rowIndex": "H",
-            "columnIndex": "H",
-            "cartesianInvalidState": "b",
-        }
-        if field_name not in types:
+
+        if field_name not in POINT_TYPES:
             raise ValueError("Unknown field name: %s" % field_name)
-        np_array = np.empty(capacity, types[field_name])
+        np_array = np.empty(capacity, POINT_TYPES[field_name])
         buffer = libe57.SourceDestBuffer(self.image_file,
                                          field_name,
                                          np_array,
