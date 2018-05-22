@@ -203,6 +203,7 @@ PYBIND11_MODULE(libe57, m) {
     cls_StructureNode.def("destImageFile", &StructureNode::destImageFile);
     cls_StructureNode.def("isAttached", &StructureNode::isAttached);
     cls_StructureNode.def("checkInvariant", &StructureNode::checkInvariant, "doRecurse"_a=true, "doUpcast"_a=true);
+    cls_StructureNode.def("__len__", &StructureNode::childCount);
     cls_StructureNode.def("__getitem__", [](const StructureNode &node, const std::string &pathName) {
         Node n = node.get(pathName);
         return cast_node(n);
@@ -233,6 +234,7 @@ PYBIND11_MODULE(libe57, m) {
     cls_VectorNode.def("destImageFile", &VectorNode::destImageFile);
     cls_VectorNode.def("isAttached", &VectorNode::isAttached);
     cls_VectorNode.def("checkInvariant", &VectorNode::checkInvariant, "doRecurse"_a=true, "doUpcast"_a=true);
+    cls_VectorNode.def("__len__", &VectorNode::childCount);
     cls_VectorNode.def("__getitem__", [](const VectorNode &node, const std::string &pathName) {
         Node n = node.get(pathName);
         return cast_node(n);
