@@ -324,6 +324,7 @@ PYBIND11_MODULE(libe57, m) {
     cls_CompressedVectorReader.def("isOpen", &CompressedVectorReader::isOpen);
     cls_CompressedVectorReader.def("compressedVectorNode", &CompressedVectorReader::compressedVectorNode);
     cls_CompressedVectorReader.def("checkInvariant", &CompressedVectorReader::checkInvariant, "doRecurse"_a=true);
+    cls_CompressedVectorReader.def("__del__", [](CompressedVectorReader &r) { r.close(); });
 
     py::class_<CompressedVectorWriter> cls_CompressedVectorWriter(m, "CompressedVectorWriter");
     cls_CompressedVectorWriter.def("write", py::overload_cast<const size_t>(&CompressedVectorWriter::write), "requestedRecordCount"_a);
@@ -332,6 +333,7 @@ PYBIND11_MODULE(libe57, m) {
     cls_CompressedVectorWriter.def("isOpen", &CompressedVectorWriter::isOpen);
     cls_CompressedVectorWriter.def("compressedVectorNode", &CompressedVectorWriter::compressedVectorNode);
     cls_CompressedVectorWriter.def("checkInvariant", &CompressedVectorWriter::checkInvariant, "doRecurse"_a=true);
+    cls_CompressedVectorWriter.def("__del__", [](CompressedVectorWriter &r) { r.close(); });
 
     py::class_<CompressedVectorNode> cls_CompressedVectorNode(m, "CompressedVectorNode");
     cls_CompressedVectorNode.def(py::init<e57::ImageFile, e57::Node, e57::VectorNode>(), "destImageFile"_a, "prototype"_a, "codecs"_a);
