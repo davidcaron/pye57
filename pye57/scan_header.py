@@ -29,10 +29,16 @@ class ScanHeader:
         return self.points.childCount()
 
     @property
-    def rotation(self) -> np.array:
+    def rotation_matrix(self) -> np.array:
         self._assert_pose()
         q = Quaternion([e.value() for e in self.node["pose"]["rotation"]])
         return q.rotation_matrix
+
+    @property
+    def rotation(self) -> np.array:
+        self._assert_pose()
+        q = Quaternion([e.value() for e in self.node["pose"]["rotation"]])
+        return q.elements
 
     @property
     def translation(self):
