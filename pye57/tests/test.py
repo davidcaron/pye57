@@ -199,31 +199,22 @@ def test_read_raw(e57_path):
     assert len(data["cartesianX"]) == header.point_count
 
 
-def test_read_write_raw_single_scan(e57_path, temp_e57_write):
+def test_read_write_single_scan(e57_path, temp_e57_write):
     e57 = pye57.E57(e57_path)
-    e57_write = pye57.E57(temp_e57_write, mode="w")
-    raw_data_0 = e57.read_scan_raw(0)
-    e57_write.write_scan_raw(raw_data_0)
+    header_source = e57.get_header(0)
+    with pye57.E57(temp_e57_write, mode="w") as e57_write:
+        raw_data_0 = e57.read_scan_raw(0)
+        e57_write.write_scan_raw(raw_data_0, rotation=header_source.rotation, translation=header_source.translation)
+    scan_0 = pye57.E57(e57_path).read_scan_raw(0)
+    written = pye57.E57(temp_e57_write)
+    header = written.get_header(0)
+    assert np.allclose(header.rotation, header_source.rotation)
+    assert np.allclose(header.translation, header_source.translation)
+    scan_0_written = written.read_scan_raw(0)
+    fields = "cartesianX cartesianY cartesianZ intensity rowIndex columnIndex cartesianInvalidState".split()
+    for field in fields:
+        assert np.allclose(scan_0[field], scan_0_written[field])
 
-
-def test_constants():
-    assert libe57.CHECKSUM_POLICY_NONE == 0
-    assert libe57.CHECKSUM_POLICY_SPARSE == 25
-    assert libe57.CHECKSUM_POLICY_HALF == 50
-    assert libe57.CHECKSUM_POLICY_ALL == 100
-    assert libe57.E57_INT8_MIN == -128
-    assert libe57.E57_INT8_MAX == 127
-    assert libe57.E57_INT16_MIN == -32768
-    assert libe57.E57_INT16_MAX == 32767
-    assert libe57.E57_INT32_MIN == -2147483647 - 1
-    assert libe57.E57_INT32_MAX == 2147483647
-    assert libe57.E57_INT64_MIN == -9223372036854775807 - 1
-    assert libe57.E57_INT64_MAX == 9223372036854775807
-    assert libe57.E57_UINT8_MIN == 0
-    assert libe57.E57_UINT8_MAX == 255
-    assert libe57.E57_UINT16_MIN == 0
-    assert libe57.E57_UINT16_MAX == 65535
-    assert libe57.E57_UINT32_MIN == 0
-    assert libe57.E57_UINT32_MAX == 4294967295
-    assert libe57.E57_UINT64_MIN == 0
-    assert libe57.E57_UINT64_MAX == 18446744073709551615
+    scan_0 = e57.read_scan(0)
+    scan_0_written = written.read_scan(0)
+    assert np.allclose(scan_0, scan_0_written)
