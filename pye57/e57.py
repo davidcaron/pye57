@@ -114,7 +114,7 @@ class E57:
 
         return data
 
-    def read_scan(self, index, intensity=False, colors=False, row_column=False, transform=True):
+    def read_scan(self, index, intensity=False, colors=False, row_column=False, transform=True) -> np.array:
         header = self.get_header(index)
         n_points = header.point_count
 
