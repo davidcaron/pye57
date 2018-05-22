@@ -210,7 +210,7 @@ PYBIND11_MODULE(libe57, m) {
     });
     cls_StructureNode.def("__getitem__", [](const StructureNode &node, int64_t index) {
         if (index >= node.childCount() || index < 0)
-            throw py::index_error("Index out of range");
+            throw py::index_error();
         Node n = node.get(index);
         return cast_node(n);
     });
@@ -241,7 +241,7 @@ PYBIND11_MODULE(libe57, m) {
     });
     cls_VectorNode.def("__getitem__", [](const VectorNode &node, int64_t index) {
         if (index >= node.childCount() || index < 0)
-            throw py::index_error("Index out of range");
+            throw py::index_error();
         Node n = node.get(index);
         return cast_node(n);
     });
