@@ -138,7 +138,7 @@ class E57:
 
         del valid, data
         if transform:
-            rot, trans = header.rotation, header.translation
+            rot, trans = header.rotation_matrix, header.translation
             xyz = np.dot(rot, xyz) + trans.reshape(3, 1)
         return xyz.T
 
