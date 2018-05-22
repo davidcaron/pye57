@@ -174,6 +174,7 @@ PYBIND11_MODULE(libe57, m) {
     cls_StructureNode.def("isDefined", &StructureNode::isDefined, "pathName"_a);
     cls_StructureNode.def("get", py::overload_cast<int64_t>(&StructureNode::get, py::const_), "index"_a);
     cls_StructureNode.def("get", py::overload_cast<const std::string &>(&StructureNode::get, py::const_), "pathName"_a);
+    // Maybe there is a more elegant way to do this
     cls_StructureNode.def("set", [](StructureNode &node, const std::string &pathName, StructureNode &n){
         node.set(pathName, n);
     }, "pathName"_a, "n"_a);
@@ -225,7 +226,14 @@ PYBIND11_MODULE(libe57, m) {
     cls_VectorNode.def("isDefined", &VectorNode::isDefined, "pathName"_a);
     cls_VectorNode.def("get", py::overload_cast<int64_t>(&VectorNode::get, py::const_), "index"_a);
     cls_VectorNode.def("get", py::overload_cast<const std::string &>(&VectorNode::get, py::const_), "pathName"_a);
-    cls_VectorNode.def("append", &VectorNode::append, "n"_a);
+    // Maybe there is a more elegant way to do this
+    cls_VectorNode.def("append", [](VectorNode &v, StructureNode &node) { v.append(node); });
+    cls_VectorNode.def("append", [](VectorNode &v, VectorNode &node) { v.append(node); });
+    cls_VectorNode.def("append", [](VectorNode &v, CompressedVectorNode &node) { v.append(node); });
+    cls_VectorNode.def("append", [](VectorNode &v, IntegerNode &node) { v.append(node); });
+    cls_VectorNode.def("append", [](VectorNode &v, ScaledIntegerNode &node) { v.append(node); });
+    cls_VectorNode.def("append", [](VectorNode &v, FloatNode &node) { v.append(node); });
+    cls_VectorNode.def("append", [](VectorNode &v, StringNode &node) { v.append(node); });
     cls_VectorNode.def(py::init<const e57::Node &>(), "n"_a);
     cls_VectorNode.def("isRoot", &VectorNode::isRoot);
     cls_VectorNode.def("parent", &VectorNode::parent);
