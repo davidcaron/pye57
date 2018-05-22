@@ -335,6 +335,9 @@ PYBIND11_MODULE(libe57, m) {
 
     py::class_<CompressedVectorNode> cls_CompressedVectorNode(m, "CompressedVectorNode");
     cls_CompressedVectorNode.def(py::init<e57::ImageFile, e57::Node, e57::VectorNode>(), "destImageFile"_a, "prototype"_a, "codecs"_a);
+    cls_CompressedVectorNode.def("__init__", [](CompressedVectorNode &n, e57::ImageFile &imf, e57::StructureNode &node, e57::VectorNode &vector_node) {
+        new (&n) CompressedVectorNode(imf, node, vector_node);
+    });
     cls_CompressedVectorNode.def("childCount", &CompressedVectorNode::childCount);
     cls_CompressedVectorNode.def("prototype", &CompressedVectorNode::prototype);
     cls_CompressedVectorNode.def("codecs", &CompressedVectorNode::codecs);
