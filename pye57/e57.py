@@ -129,8 +129,7 @@ class E57:
         fields.append("cartesianInvalidState")
 
         data, buffers = self.make_buffers(fields, n_points)
-        data_reader = header.points.reader(buffers)
-        data_reader.read()
+        header.points.reader(buffers).read()
 
         valid = data["cartesianInvalidState"].astype("?")
 
