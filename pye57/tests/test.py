@@ -178,7 +178,7 @@ def test_read_header(e57_path):
     scan_0_rot = [[-0.4443, 0.8958, 0.],
                   [-0.8958, -0.4443, 0.],
                   [0., 0., 1.]]
-    assert np.allclose(scan_0_rot, headers[0].rotation, atol=1e-3)
+    assert np.allclose(scan_0_rot, headers[0].rotation_matrix, atol=1e-3)
     scan_0_tra = [301336.23199, 5042597.23676, 15.46649]
     assert np.allclose(scan_0_tra, headers[0].translation)
 
