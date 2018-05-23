@@ -226,3 +226,42 @@ def test_read_write_single_scan(e57_path, temp_e57_write):
     scan_0 = e57.read_scan(0)
     scan_0_written = written.read_scan(0)
     assert np.allclose(scan_0, scan_0_written)
+
+
+def test_copy_file(e57_path, temp_e57_write):
+    e57 = pye57.E57(e57_path)
+    with pye57.E57(temp_e57_write, mode="w") as f:
+        for scan_id in range(e57.scan_count):
+            header = e57.get_header(scan_id)
+            data = e57.read_scan_raw(scan_id)
+            f.write_scan_raw(data, scan_header=header)
+            header_written = f.get_header(scan_id)
+            assert header_written.guid
+            assert header_written.temperature == header_written.temperature
+            assert header_written.relativeHumidity == header_written.relativeHumidity
+            assert header_written.atmosphericPressure == header_written.atmosphericPressure
+            assert header_written.rowMinimum == header.rowMinimum
+            assert header_written.rowMaximum == header.rowMaximum
+            assert header_written.columnMinimum == header.columnMinimum
+            assert header_written.columnMaximum == header.columnMaximum
+            assert header_written.returnMinimum == header.returnMinimum
+            assert header_written.returnMaximum == header.returnMaximum
+            assert header_written.intensityMinimum == header.intensityMinimum
+            assert header_written.intensityMaximum == header.intensityMaximum
+            assert header_written.xMinimum == header.xMinimum
+            assert header_written.xMaximum == header.xMaximum
+            assert header_written.yMinimum == header.yMinimum
+            assert header_written.yMaximum == header.yMaximum
+            assert header_written.zMinimum == header.zMinimum
+            assert header_written.zMaximum == header.zMaximum
+            assert np.allclose(header_written.rotation, header.rotation)
+            assert np.allclose(header_written.translation, header.translation)
+            assert header_written.acquisitionStart_dateTimeValue == header.acquisitionStart_dateTimeValue
+            assert header_written.acquisitionStart_isAtomicClockReferenced == header.acquisitionStart_isAtomicClockReferenced
+            assert header_written.acquisitionEnd_dateTimeValue == header.acquisitionEnd_dateTimeValue
+            assert header_written.acquisitionEnd_isAtomicClockReferenced == header.acquisitionEnd_isAtomicClockReferenced
+            # todo: point groups
+            # header.pointGroupingSchemes["groupingByLine"]["idElementName"].value()
+            # header.pointGroupingSchemes["groupingByLine"]["groups"]
+
+        assert f.scan_count == e57.scan_count

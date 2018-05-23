@@ -151,17 +151,30 @@ class E57:
             xyz = self.to_global(xyz, header.rotation, header.translation)
         return xyz
 
-    def write_scan_raw(self, data: Dict, name=None, rotation=None, translation=None):
+    def write_scan_raw(self, data: Dict, *, name=None, rotation=None, translation=None, scan_header=None):
         for field in data.keys():
             if field not in SUPPORTED_POINT_FIELDS:
                 raise ValueError("Unsupported point field: %s" % field)
 
+        if rotation is None:
+            rotation = getattr(scan_header, "rotation", np.array([0, 0, 0, 0]))
+
+        if translation is None:
+            translation = getattr(scan_header, "translation", np.array([0, 0, 0]))
+
         if name is None:
-            name = "Scan %s" % len(self.data3d)
+            name = getattr(scan_header, "name", "Scan %s" % len(self.data3d))
+
+        temperature = getattr(scan_header, "temperature", 0)
+        relativeHumidity = getattr(scan_header, "relativeHumidity", 0)
+        atmosphericPressure = getattr(scan_header, "atmosphericPressure", 0)
 
         scan_node = libe57.StructureNode(self.image_file)
         scan_node.set("guid", libe57.StringNode(self.image_file, "{%s}" % uuid.uuid4()))
         scan_node.set("name", libe57.StringNode(self.image_file, name))
+        scan_node.set("temperature", libe57.FloatNode(self.image_file, temperature))
+        scan_node.set("relativeHumidity", libe57.FloatNode(self.image_file, relativeHumidity))
+        scan_node.set("atmosphericPressure", libe57.FloatNode(self.image_file, atmosphericPressure))
         scan_node.set("description", libe57.StringNode(self.image_file, "pye57 v%s" % __version__))
 
         n_points = data["cartesianX"].shape[0]
@@ -186,9 +199,11 @@ class E57:
         scan_node.set("indexBounds", ibox)
 
         if "intensity" in data:
+            int_min = getattr(scan_header, "intensityMinimum", np.min(data["intensity"]))
+            int_max = getattr(scan_header, "intensityMaximum", np.max(data["intensity"]))
             intbox = libe57.StructureNode(self.image_file)
-            intbox.set("intensityMinimum", libe57.FloatNode(self.image_file, np.min(data["intensity"])))
-            intbox.set("intensityMaximum", libe57.FloatNode(self.image_file, np.max(data["intensity"])))
+            intbox.set("intensityMinimum", libe57.FloatNode(self.image_file, int_min))
+            intbox.set("intensityMaximum", libe57.FloatNode(self.image_file, int_max))
             scan_node.set("intensityLimits", intbox)
 
         color = all(c in data for c in ["colorRed", "colorGreen", "colorBlue"])
@@ -203,15 +218,28 @@ class E57:
             scan_node.set("colorLimits", colorbox)
 
         bbox_node = libe57.StructureNode(self.image_file)
-        cartesian_xyz = ["cartesianX", "cartesianY", "cartesianZ"]
-        bb_min = np.array([np.min(data[c]) for c in cartesian_xyz])
-        bb_max = np.array([np.max(data[c]) for c in cartesian_xyz])
-        bbox_node.set("xMinimum", libe57.FloatNode(self.image_file, bb_min[0]))
-        bbox_node.set("xMaximum", libe57.FloatNode(self.image_file, bb_max[0]))
-        bbox_node.set("yMinimum", libe57.FloatNode(self.image_file, bb_min[1]))
-        bbox_node.set("yMaximum", libe57.FloatNode(self.image_file, bb_max[1]))
-        bbox_node.set("zMinimum", libe57.FloatNode(self.image_file, bb_min[2]))
-        bbox_node.set("zMaximum", libe57.FloatNode(self.image_file, bb_max[2]))
+        x, y, z = data["cartesianX"], data["cartesianY"], data["cartesianZ"]
+        valid = None
+        if "cartesianInvalidState" in data:
+            valid = ~data["cartesianInvalidState"].astype("?")
+            x, y, z = x[valid], y[valid], z[valid]
+        bb_min = np.array([x.min(), y.min(), z.min()])
+        bb_max = np.array([x.max(), y.max(), z.max()])
+        del valid, x, y, z
+
+        if scan_header is not None:
+            bb_min_scaled = np.array([scan_header.xMinimum, scan_header.yMinimum, scan_header.zMinimum])
+            bb_max_scaled = np.array([scan_header.xMaximum, scan_header.yMaximum, scan_header.zMaximum])
+        else:
+            bb_min_scaled = self.to_global(bb_min.reshape(-1, 3), rotation, translation)[0]
+            bb_max_scaled = self.to_global(bb_max.reshape(-1, 3), rotation, translation)[0]
+
+        bbox_node.set("xMinimum", libe57.FloatNode(self.image_file, bb_min_scaled[0]))
+        bbox_node.set("xMaximum", libe57.FloatNode(self.image_file, bb_max_scaled[0]))
+        bbox_node.set("yMinimum", libe57.FloatNode(self.image_file, bb_min_scaled[1]))
+        bbox_node.set("yMaximum", libe57.FloatNode(self.image_file, bb_max_scaled[1]))
+        bbox_node.set("zMinimum", libe57.FloatNode(self.image_file, bb_min_scaled[2]))
+        bbox_node.set("zMaximum", libe57.FloatNode(self.image_file, bb_max_scaled[2]))
         scan_node.set("cartesianBounds", bbox_node)
 
         if rotation is not None and translation is not None:
@@ -229,18 +257,20 @@ class E57:
             translation_node.set("z", libe57.FloatNode(self.image_file, translation[2]))
             pose_node.set("translation", translation_node)
 
-        # # todo: start end times
-        # is_atomic_clock_referenced = False
-        # start = "date_time"
-        # end = "date_time"
-        # acquisition_start = libe57.StructureNode(self.image_file)
-        # scan_node.set("acquisitionStart", acquisition_start)
-        # acquisition_start.set("dateTimeValue", libe57.FloatNode(self.image_file, start))
-        # acquisition_start.set("isAtomicClockReferenced", libe57.IntegerNode(self.image_file, is_atomic_clock_referenced))
-        # acquisition_end = libe57.StructureNode(self.image_file)
-        # scan_node.set("acquisitionEnd", acquisition_end)
-        # acquisition_end.set("dateTimeValue", libe57.FloatNode(self.image_file, end))
-        # acquisition_end.set("isAtomicClockReferenced", libe57.IntegerNode(self.image_file, is_atomic_clock_referenced))
+        start_datetime = getattr(scan_header, "acquisitionStart_dateTimeValue", 0)
+        start_atomic = getattr(scan_header, "acquisitionStart_isAtomicClockReferenced", False)
+        end_datetime = getattr(scan_header, "acquisitionEnd_dateTimeValue", 0)
+        end_atomic = getattr(scan_header, "acquisitionEnd_isAtomicClockReferenced", False)
+        acquisition_start = libe57.StructureNode(self.image_file)
+        scan_node.set("acquisitionStart", acquisition_start)
+        acquisition_start.set("dateTimeValue", libe57.FloatNode(self.image_file, start_datetime))
+        acquisition_start.set("isAtomicClockReferenced", libe57.IntegerNode(self.image_file, start_atomic))
+        acquisition_end = libe57.StructureNode(self.image_file)
+        scan_node.set("acquisitionEnd", acquisition_end)
+        acquisition_end.set("dateTimeValue", libe57.FloatNode(self.image_file, end_datetime))
+        acquisition_end.set("isAtomicClockReferenced", libe57.IntegerNode(self.image_file, end_atomic))
+
+        # todo: pointGroupingSchemes
 
         points_prototype = libe57.StructureNode(self.image_file)
 
