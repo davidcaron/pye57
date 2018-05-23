@@ -134,6 +134,14 @@ def test_source_dest_buffers(e57_path):
         assert sdb.doConversion()
 
 
+def test_unsupported_point_field(temp_e57_write):
+    with pye57.E57(temp_e57_write, mode="w") as f:
+        with pytest.raises(ValueError):
+            data = {"cartesianX": np.random.rand(10),
+                    "bananas": np.random.rand(10)}
+            f.write_scan_raw(data)
+
+
 def test_source_dest_buffers_raises(e57_path):
     f = libe57.ImageFile(e57_path, "r")
     capacity = 1000

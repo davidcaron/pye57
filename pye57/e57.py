@@ -9,7 +9,7 @@ from pye57.__version__ import __version__
 from pye57 import libe57
 from pye57 import ScanHeader
 
-POINT_TYPES = {
+SUPPORTED_POINT_FIELDS = {
     "cartesianX": "d",
     "cartesianY": "d",
     "cartesianZ": "d",
@@ -81,10 +81,10 @@ class E57:
         self.root.set("images2D", libe57.VectorNode(imf, True))
 
     def make_buffer(self, field_name, capacity, do_conversion=True, do_scaling=True):
+        if field_name not in SUPPORTED_POINT_FIELDS:
+            raise ValueError("Unsupported point field: %s" % field_name)
 
-        if field_name not in POINT_TYPES:
-            raise ValueError("Unknown field name: %s" % field_name)
-        np_array = np.empty(capacity, POINT_TYPES[field_name])
+        np_array = np.empty(capacity, SUPPORTED_POINT_FIELDS[field_name])
         buffer = libe57.SourceDestBuffer(self.image_file,
                                          field_name,
                                          np_array,
@@ -143,6 +143,10 @@ class E57:
         return xyz.T
 
     def write_scan_raw(self, data: Dict, name=None, rotation=None, translation=None):
+        for field in data.keys():
+            if field not in SUPPORTED_POINT_FIELDS:
+                raise ValueError("Unsupported point field: %s" % field)
+
         if name is None:
             name = "Scan %s" % len(self.data3d)
 
@@ -302,7 +306,7 @@ class E57:
         while current_index != n_points:
             current_chunk = min(n_points - current_index, chunk_size)
 
-            for type_ in POINT_TYPES:
+            for type_ in SUPPORTED_POINT_FIELDS:
                 if type_ in arrays:
                     arrays[type_][:current_chunk] = data[type_][current_index:current_index + current_chunk]
 
