@@ -8,7 +8,7 @@ from pye57.utils import get_fields, get_node
 class ScanHeader:
     def __init__(self, scan_node):
         self.node = scan_node
-        points = libe57.CompressedVectorNode(self.node.get("points"))
+        points = self.node["points"]
         self.point_fields = get_fields(libe57.StructureNode(points.prototype()))
         self.scan_fields = get_fields(self.node)
 
