@@ -58,15 +58,3 @@ class ScanHeader:
             if isinstance(child_node, libe57.StructureNode):
                 lines += self.pretty_print(child_node, indent + "    ")
         return lines
-
-    # print(get_node(self.node, "guid").value())
-    # print(get_node(self.node, "temperature").value())
-    # print(get_node(self.node, "relativeHumidity").value())
-    # print(get_node(self.node, "atmosphericPressure").value())
-    # print(get_fields(get_node(self.node, "indexBounds")))
-    # print(get_node(self.node, "intensityLimits").value())
-    # print(get_node(self.node, "cartesianBounds").value())
-    # print(get_node(self.node, "pose").value())
-    # print(get_node(self.node, "acquisitionStart").value())
-    # print(get_node(self.node, "acquisitionEnd").value())
-    # print(get_node(self.node, "pointGroupingSchemes").value())
