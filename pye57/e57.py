@@ -133,7 +133,9 @@ class E57:
         if intensity:
             fields.append("intensity")
         if colors:
-            raise NotImplementedError
+            fields.append("colorRed")
+            fields.append("colorGreen")
+            fields.append("colorBlue")
         if row_column:
             fields.append("rowIndex")
             fields.append("columnIndex")
