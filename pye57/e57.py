@@ -123,7 +123,7 @@ class E57:
     @staticmethod
     def to_global(points, rotation, translation):
         rotation_matrix = Quaternion(rotation).rotation_matrix
-        return (np.dot(rotation_matrix, points.T) + translation.reshape(3, 1)).reshape(-1, 3)
+        return (np.dot(rotation_matrix, points.T) + translation.reshape(3, 1)).T
 
     def read_scan(self,
                   index,
