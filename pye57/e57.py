@@ -61,6 +61,10 @@ class E57:
     def data3d(self):
         return self.root["data3D"]
 
+    @property
+    def scan_count(self):
+        return len(self.data3d)
+
     def get_header(self, index):
         return ScanHeader(self.data3d[index])
 
