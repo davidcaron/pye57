@@ -125,7 +125,13 @@ class E57:
         rotation_matrix = Quaternion(rotation).rotation_matrix
         return (np.dot(rotation_matrix, points.T) + translation.reshape(3, 1)).reshape(-1, 3)
 
-    def read_scan(self, index, intensity=False, colors=False, row_column=False, transform=True) -> np.array:
+    def read_scan(self,
+                  index,
+                  *,
+                  intensity=False,
+                  colors=False,
+                  row_column=False,
+                  transform=True) -> Dict:
         header = self.get_header(index)
         n_points = header.point_count
 
@@ -146,12 +152,19 @@ class E57:
 
         valid = ~data["cartesianInvalidState"].astype("?")
 
-        xyz = np.array([data["cartesianX"][valid], data["cartesianY"][valid], data["cartesianZ"][valid]]).T
+        for field in data:
+            data[field] = data[field][valid]
 
-        del valid, data
+        del data["cartesianInvalidState"]
+
         if transform:
+            xyz = np.array([data["cartesianX"], data["cartesianY"], data["cartesianZ"]]).T
             xyz = self.to_global(xyz, header.rotation, header.translation)
-        return xyz
+            data["cartesianX"] = xyz[:, 0]
+            data["cartesianY"] = xyz[:, 1]
+            data["cartesianZ"] = xyz[:, 2]
+
+        return data
 
     def write_scan_raw(self, data: Dict, *, name=None, rotation=None, translation=None, scan_header=None):
         for field in data.keys():

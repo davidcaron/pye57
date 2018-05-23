@@ -225,7 +225,8 @@ def test_read_write_single_scan(e57_path, temp_e57_write):
 
     scan_0 = e57.read_scan(0)
     scan_0_written = written.read_scan(0)
-    assert np.allclose(scan_0, scan_0_written)
+    for field in scan_0:
+        assert np.allclose(scan_0[field], scan_0_written[field])
 
 
 def test_copy_file(e57_path, temp_e57_write):
