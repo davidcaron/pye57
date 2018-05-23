@@ -148,10 +148,13 @@ class E57:
             fields.append("columnIndex")
         fields.append("cartesianInvalidState")
 
-        if not ignore_missing_fields:
-            for field in fields:
-                if field not in header.point_fields:
-                    raise ValueError("Requested to read a field with is absent from the e57 file: %s" % field)
+        for field in fields[:]:
+            if field not in header.point_fields:
+                if ignore_missing_fields:
+                    fields.remove(field)
+                else:
+                    raise ValueError("Requested to read a field (%s) with is absent from the e57 file. "
+                                     "Consider using 'ignore_missing_fields' to skip it." % field)
 
         data, buffers = self.make_buffers(fields, n_points)
         header.points.reader(buffers).read()
