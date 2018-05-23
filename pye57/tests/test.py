@@ -272,3 +272,8 @@ def test_read_color_absent(e57_path):
     e57 = pye57.E57(e57_path)
     with pytest.raises(ValueError):
         data = e57.read_scan(0, colors=True)
+
+
+def test_scan_position(e57_path):
+    e57 = pye57.E57(e57_path)
+    assert np.allclose(e57.scan_position(3), np.array([[3.01323456e+05, 5.04260184e+06, 1.56040279e+01]]))

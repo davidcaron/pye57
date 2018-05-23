@@ -120,6 +120,11 @@ class E57:
 
         return data
 
+    def scan_position(self, index):
+        pt = np.array([[0, 0, 0]])
+        header = self.get_header(index)
+        return self.to_global(pt, header.rotation, header.translation)
+
     @staticmethod
     def to_global(points, rotation, translation):
         rotation_matrix = Quaternion(rotation).rotation_matrix
