@@ -21,10 +21,6 @@ class ScanHeader:
             raise ValueError("Scan header doesn't contain a pose")
 
     @property
-    def points(self):
-        return self.node["points"]
-
-    @property
     def point_count(self):
         return self.points.childCount()
 
@@ -58,3 +54,126 @@ class ScanHeader:
             if isinstance(child_node, libe57.StructureNode):
                 lines += self.pretty_print(child_node, indent + "    ")
         return lines
+
+    def __getitem__(self, item):
+        return self.node[item]
+
+    @property
+    def guid(self):
+        return self["guid"].value()
+
+    @property
+    def temperature(self):
+        return self["temperature"].value()
+
+    @property
+    def relativeHumidity(self):
+        return self["relativeHumidity"].value()
+
+    @property
+    def atmosphericPressure(self):
+        return self["atmosphericPressure"].value()
+
+    @property
+    def indexBounds(self):
+        return self["indexBounds"]
+
+    @property
+    def rowMinimum(self):
+        return self.indexBounds["rowMinimum"].value()
+
+    @property
+    def rowMaximum(self):
+        return self.indexBounds["rowMaximum"].value()
+
+    @property
+    def columnMinimum(self):
+        return self.indexBounds["columnMinimum"].value()
+
+    @property
+    def columnMaximum(self):
+        return self.indexBounds["columnMaximum"].value()
+
+    @property
+    def returnMinimum(self):
+        return self.indexBounds["returnMinimum"].value()
+
+    @property
+    def returnMaximum(self):
+        return self.indexBounds["returnMaximum"].value()
+
+    @property
+    def intensityLimits(self):
+        return self["intensityLimits"]
+
+    @property
+    def intensityMinimum(self):
+        return self.intensityLimits["intensityMinimum"].value()
+
+    @property
+    def intensityMaximum(self):
+        return self.intensityLimits["intensityMaximum"].value()
+
+    @property
+    def cartesianBounds(self):
+        return self["cartesianBounds"]
+
+    @property
+    def xMinimum(self):
+        return self.cartesianBounds["xMinimum"].value()
+
+    @property
+    def xMaximum(self):
+        return self.cartesianBounds["xMaximum"].value()
+
+    @property
+    def yMinimum(self):
+        return self.cartesianBounds["yMinimum"].value()
+
+    @property
+    def yMaximum(self):
+        return self.cartesianBounds["yMaximum"].value()
+
+    @property
+    def zMinimum(self):
+        return self.cartesianBounds["zMinimum"].value()
+
+    @property
+    def zMaximum(self):
+        return self.cartesianBounds["zMaximum"].value()
+
+    @property
+    def pose(self):
+        return self["pose"]
+
+    @property
+    def acquisitionStart(self):
+        return self["acquisitionStart"]
+
+    @property
+    def acquisitionStart_dateTimeValue(self):
+        return self.acquisitionStart["dateTimeValue"].value()
+
+    @property
+    def acquisitionStart_isAtomicClockReferenced(self):
+        return self.acquisitionStart["isAtomicClockReferenced"].value()
+
+    @property
+    def acquisitionEnd(self):
+        return self["acquisitionEnd"]
+
+    @property
+    def acquisitionEnd_dateTimeValue(self):
+        return self.acquisitionEnd["dateTimeValue"].value()
+
+    @property
+    def acquisitionEnd_isAtomicClockReferenced(self):
+        return self.acquisitionEnd["isAtomicClockReferenced"].value()
+
+    @property
+    def pointGroupingSchemes(self):
+        return self["pointGroupingSchemes"]
+
+    @property
+    def points(self):
+        return self["points"]
