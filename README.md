@@ -61,3 +61,7 @@ data3d = root["data3D"]
 scan_0 = data3d[0]
 translation_x = scan_0["pose"]["translation"]["x"]
 ```
+
+## Building notes
+
+You need xerces-c to compile. Binaries can be obtained from conda using: `conda install xerces-c`
