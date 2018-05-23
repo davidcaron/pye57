@@ -131,7 +131,8 @@ class E57:
                   intensity=False,
                   colors=False,
                   row_column=False,
-                  transform=True) -> Dict:
+                  transform=True,
+                  ignore_missing_fields=False) -> Dict:
         header = self.get_header(index)
         n_points = header.point_count
 
@@ -147,9 +148,10 @@ class E57:
             fields.append("columnIndex")
         fields.append("cartesianInvalidState")
 
-        for field in fields:
-            if field not in header.point_fields:
-                raise ValueError("Requested to read a field with is absent from the e57 file: %s" % field)
+        if not ignore_missing_fields:
+            for field in fields:
+                if field not in header.point_fields:
+                    raise ValueError("Requested to read a field with is absent from the e57 file: %s" % field)
 
         data, buffers = self.make_buffers(fields, n_points)
         header.points.reader(buffers).read()
