@@ -142,7 +142,7 @@ class E57:
         data, buffers = self.make_buffers(fields, n_points)
         header.points.reader(buffers).read()
 
-        valid = data["cartesianInvalidState"].astype("?")
+        valid = ~data["cartesianInvalidState"].astype("?")
 
         xyz = np.array([data["cartesianX"][valid], data["cartesianY"][valid], data["cartesianZ"][valid]]).T
 
