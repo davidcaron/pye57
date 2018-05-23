@@ -62,6 +62,15 @@ scan_0 = data3d[0]
 translation_x = scan_0["pose"]["translation"]["x"]
 ```
 
+
+## Installation
+
+Available on pypi for Windows and python 3.6:
+
+`pip install pye57`
+
+Otherwise, you will have to build it yourself (working on releasing more wheels).
+
 ## Building notes
 
 You need xerces-c to compile. Binaries can be obtained from conda using: `conda install xerces-c`
