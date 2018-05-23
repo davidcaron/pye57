@@ -266,3 +266,9 @@ def test_copy_file(e57_path, temp_e57_write):
             # header.pointGroupingSchemes["groupingByLine"]["groups"]
 
         assert f.scan_count == e57.scan_count
+
+
+def test_read_color_absent(e57_path):
+    e57 = pye57.E57(e57_path)
+    with pytest.raises(ValueError):
+        data = e57.read_scan(0, colors=True)
