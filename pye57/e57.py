@@ -68,7 +68,7 @@ class E57:
         imf = self.image_file
         imf.extensionsAdd("", libe57.E57_V1_0_URI)
         self.root.set("formatName", libe57.StringNode(imf, "ASTM E57 3D Imaging Data File"))
-        self.root.set("guid", libe57.StringNode(imf, str(uuid.uuid4())))
+        self.root.set("guid", libe57.StringNode(imf, "{%s}" % uuid.uuid4()))
         self.root.set("versionMajor", libe57.IntegerNode(imf, libe57.E57_FORMAT_MAJOR))
         self.root.set("versionMinor", libe57.IntegerNode(imf, libe57.E57_FORMAT_MINOR))
         self.root.set("e57LibraryVersion", libe57.StringNode(imf, libe57.E57_LIBRARY_ID))
@@ -151,7 +151,7 @@ class E57:
             name = "Scan %s" % len(self.data3d)
 
         scan_node = libe57.StructureNode(self.image_file)
-        scan_node.set("guid", libe57.StringNode(self.image_file, str(uuid.uuid4())))
+        scan_node.set("guid", libe57.StringNode(self.image_file, "{%s}" % uuid.uuid4()))
         scan_node.set("name", libe57.StringNode(self.image_file, name))
         scan_node.set("description", libe57.StringNode(self.image_file, "pye57 v%s" % __version__))
 
