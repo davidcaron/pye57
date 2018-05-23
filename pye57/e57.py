@@ -4,6 +4,7 @@ import os
 from typing import Dict
 
 import numpy as np
+from pyquaternion import Quaternion
 
 from pye57.__version__ import __version__
 from pye57 import libe57
@@ -119,6 +120,11 @@ class E57:
 
         return data
 
+    @staticmethod
+    def to_global(points, rotation, translation):
+        rotation_matrix = Quaternion(rotation).rotation_matrix
+        return (np.dot(rotation_matrix, points.T) + translation.reshape(3, 1)).reshape(-1, 3)
+
     def read_scan(self, index, intensity=False, colors=False, row_column=False, transform=True) -> np.array:
         header = self.get_header(index)
         n_points = header.point_count
@@ -138,13 +144,12 @@ class E57:
 
         valid = data["cartesianInvalidState"].astype("?")
 
-        xyz = np.array([data["cartesianX"][valid], data["cartesianY"][valid], data["cartesianZ"][valid]])
+        xyz = np.array([data["cartesianX"][valid], data["cartesianY"][valid], data["cartesianZ"][valid]]).T
 
         del valid, data
         if transform:
-            rot, trans = header.rotation_matrix, header.translation
-            xyz = np.dot(rot, xyz) + trans.reshape(3, 1)
-        return xyz.T
+            xyz = self.to_global(xyz, header.rotation, header.translation)
+        return xyz
 
     def write_scan_raw(self, data: Dict, name=None, rotation=None, translation=None):
         for field in data.keys():
