@@ -14,7 +14,7 @@ DESCRIPTION = 'Python .e57 files reader/writer'
 URL = 'https://www.github.com/davidcaron/pye57'
 EMAIL = 'dcaron05@gmail.com'
 AUTHOR = 'David Caron'
-REQUIRES_PYTHON = '==3.6.*'
+REQUIRES_PYTHON = '>=3.5.*'
 VERSION = None
 
 PYTHON_HOME = os.path.split(sys.executable)[0]
