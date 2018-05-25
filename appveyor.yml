@@ -1,0 +1,31 @@
+version: 1.0.{build}
+image: Visual Studio 2015
+environment:
+  matrix:
+  - PYTHON: C:\Miniconda36-x64
+  - PYTHON: C:\Miniconda35-x64
+  - PYTHON: C:\Miniconda36
+  - PYTHON: C:\Miniconda35
+install:
+- cmd: >-
+    %PYTHON%\Scripts\conda install -y xerces-c setuptools
+
+    %PYTHON%\Scripts\pip install -r C:\projects\pye57\requirements.txt
+
+    git submodule update --init --recursive
+build_script:
+- cmd: >-
+    %PYTHON%\python.exe setup.py build_ext -i
+
+    %PYTHON%\Scripts\pip install cibuildwheel==0.8.0
+
+    cibuildwheel --output-dir wheelhouse
+test_script:
+- cmd: >-
+    cd C:\projects\pye57
+
+    %PYTHON%\python setup.py test
+
+artifacts:
+- path: "wheelhouse\\*.whl"
+  name: Wheels
