@@ -26,6 +26,10 @@ REQUIRED = [
     "pyquaternion"
 ]
 
+REQUIRED_FOR_TESTS = [
+    "pytest"
+]
+
 DEBUG = False
 if "--debug" in sys.argv:
     sys.argv.remove("--debug")
@@ -165,6 +169,8 @@ setup(
     packages=find_packages(exclude=('tests',)),
     ext_modules=ext_modules,
     install_requires=REQUIRED,
+    setup_requires=["pytest-runner"],
+    tests_require=REQUIRED_FOR_TESTS,
     include_package_data=True,
     license='MIT',
     classifiers=[

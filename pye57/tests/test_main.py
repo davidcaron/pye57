@@ -14,7 +14,8 @@ def test_hi():
 
 
 def test_data(*args):
-    return os.path.join("test_data", *args)
+    here = os.path.split(__file__)[0]
+    return os.path.join(here, "test_data", *args)
 
 
 def delete_retry(path):
