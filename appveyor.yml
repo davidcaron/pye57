@@ -9,8 +9,6 @@ environment:
 max_jobs: 4
 install:
 - cmd: >-
-    ECHO %APPVEYOR_REPO_TAG%
-
     SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%
 
     python --version
