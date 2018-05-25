@@ -169,7 +169,7 @@ setup(
     packages=find_packages(exclude=('tests',)),
     ext_modules=ext_modules,
     install_requires=REQUIRED,
-    setup_requires=["pytest-runner"],
+    setup_requires=['setuptools>=27.3', "pytest-runner"],
     tests_require=REQUIRED_FOR_TESTS,
     include_package_data=True,
     license='MIT',
