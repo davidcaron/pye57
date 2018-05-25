@@ -69,11 +69,11 @@ translation_x = scan_0["pose"]["translation"]["x"]
 
 ## Installation
 
-Available on pypi for Windows and python 3.6:
+If you're on Windows and using python 3.5 or 3.6:
 
 `pip install pye57`
 
-Otherwise, you will have to build it yourself (working on releasing more wheels).
+Otherwise, you will have to build it yourself (working on linux and macos versions).
 
 ## Building notes
 

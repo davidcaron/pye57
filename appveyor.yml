@@ -27,7 +27,7 @@ test_script:
 
     python setup.py test
 after_test:
-  - IF "%APPVEYOR_REPO_TAG%" == "true" (pip install wheel twine)
+  - IF "%APPVEYOR_REPO_TAG%" == "true" (pip install --upgrade wheel twine)
   - IF "%APPVEYOR_REPO_TAG%" == "true" (python.exe setup.py bdist_wheel)
   - IF "%APPVEYOR_REPO_TAG%" == "true" (dir dist)
 on_success:
