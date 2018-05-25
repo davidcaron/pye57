@@ -1,5 +1,11 @@
 # pye57
 
+
+
+[![PyPI](https://img.shields.io/pypi/v/pye57.svg)](https://pypi.org/project/pye57)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pye57.svg)](https://pypi.org/project/pye57)
+[![AppVeyor](https://img.shields.io/appveyor/ci/davidcaron/pye57.svg)](https://ci.appveyor.com/project/davidcaron/pye57)
+
 Python wrapper of LibE57Format to read and write .e57 point cloud files
 
 ## Example usage

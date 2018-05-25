@@ -6,26 +6,29 @@ environment:
   - PYTHON: C:\Miniconda35-x64
   - PYTHON: C:\Miniconda36
   - PYTHON: C:\Miniconda35
+max_jobs: 4
 install:
 - cmd: >-
-    %PYTHON%\Scripts\conda install -y xerces-c setuptools
+    SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%
 
-    %PYTHON%\Scripts\pip install -r C:\projects\pye57\requirements.txt
+    python --version
+
+    conda install -y xerces-c setuptools
+
+    pip install -r C:\projects\pye57\requirements.txt
 
     git submodule update --init --recursive
 build_script:
 - cmd: >-
-    %PYTHON%\python.exe setup.py build_ext -i
-
-    %PYTHON%\Scripts\pip install cibuildwheel==0.8.0
-
-    %PYTHON%\Scripts\cibuildwheel --output-dir wheelhouse
+    python.exe setup.py build_ext -i
 test_script:
 - cmd: >-
     cd C:\projects\pye57
 
-    %PYTHON%\python setup.py test
-
-artifacts:
-- path: "wheelhouse\\*.whl"
-  name: Wheels
+    python setup.py test
+after_test:
+  - IF "%APPVEYOR_REPO_TAG%" == "true" (pip install wheel twine)
+  - IF "%APPVEYOR_REPO_TAG%" == "true" (python.exe setup.py bdist_wheel)
+  - IF "%APPVEYOR_REPO_TAG%" == "true" (dir dist)
+on_success:
+  - IF "%APPVEYOR_REPO_TAG%" == "true" (twine upload --skip-existing dist/*.whl)
