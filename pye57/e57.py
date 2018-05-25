@@ -308,7 +308,7 @@ class E57:
 
         center = (bb_max + bb_min) / 2
 
-        chunk_size = 5_000_000
+        chunk_size = 5000000
 
         x_node = libe57.FloatNode(self.image_file, center[0], precision, bb_min[0], bb_max[0])
         y_node = libe57.FloatNode(self.image_file, center[1], precision, bb_min[1], bb_max[1])
