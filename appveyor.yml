@@ -17,9 +17,7 @@ build_script:
 - cmd: >-
     %PYTHON%\python.exe setup.py build_ext -i
 
-    %PYTHON%\Scripts\pip install cibuildwheel==0.8.0
-
-    %PYTHON%\Scripts\cibuildwheel --output-dir wheelhouse
+    %PYTHON%\python.exe setup.py bdist_wheel
 test_script:
 - cmd: >-
     cd C:\projects\pye57
@@ -27,5 +25,5 @@ test_script:
     %PYTHON%\python setup.py test
 
 artifacts:
-- path: "wheelhouse\\*.whl"
+- path: "dist\\*.whl"
   name: Wheels
