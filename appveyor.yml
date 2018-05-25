@@ -17,7 +17,7 @@ build_script:
 - cmd: >-
     %PYTHON%\python.exe setup.py build_ext -i
 
-    %PYTHON%\python.exe setup.py bdist_wheel
+    %PYTHON%\python.exe setup.py sdist bdist_wheel
 test_script:
 - cmd: >-
     cd C:\projects\pye57
