@@ -19,7 +19,7 @@ build_script:
 
     %PYTHON%\Scripts\pip install cibuildwheel==0.8.0
 
-    cibuildwheel --output-dir wheelhouse
+    %PYTHON%\Scripts\cibuildwheel --output-dir wheelhouse
 test_script:
 - cmd: >-
     cd C:\projects\pye57
