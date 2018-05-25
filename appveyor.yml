@@ -25,5 +25,5 @@ test_script:
     %PYTHON%\python setup.py test
 
 artifacts:
-- path: "dist\\*.whl"
+- path: "dist\\"
   name: Wheels
