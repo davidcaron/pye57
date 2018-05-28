@@ -1,0 +1,30 @@
+dist: trusty
+sudo: false
+language: python
+python:
+  - "3.6"
+
+env:
+  global:
+
+compiler:
+  - gcc
+  - clang
+
+before_install:
+
+addons:
+  apt:
+    packages:
+      - libxerces-c-dev
+
+before_script:
+  - python --version
+  - pip install -r requirements.txt
+  - gcc --version
+  - clang --version
+  - pkg-config xerces-c
+
+script:
+  - python setup.py build_ext -i
+  - python setup.py test

@@ -172,8 +172,8 @@ PYBIND11_MODULE(libe57, m) {
     cls_StructureNode.def(py::init<e57::ImageFile>(), "destImageFile"_a);
     cls_StructureNode.def("childCount", &StructureNode::childCount);
     cls_StructureNode.def("isDefined", &StructureNode::isDefined, "pathName"_a);
-    cls_StructureNode.def("get", py::overload_cast<int64_t>(&StructureNode::get, py::const_), "index"_a);
-    cls_StructureNode.def("get", py::overload_cast<const std::string &>(&StructureNode::get, py::const_), "pathName"_a);
+    cls_StructureNode.def("get", (Node (StructureNode::*)(int64_t) const) &StructureNode::get, "index"_a);
+    cls_StructureNode.def("get", (Node (StructureNode::*)(const std::string &) const) &StructureNode::get, "pathName"_a);
     // Maybe there is a more elegant way to do this
     cls_StructureNode.def("set", [](StructureNode &node, const std::string &pathName, StructureNode &n){
         node.set(pathName, n);
@@ -224,8 +224,8 @@ PYBIND11_MODULE(libe57, m) {
     cls_VectorNode.def("allowHeteroChildren", &VectorNode::allowHeteroChildren);
     cls_VectorNode.def("childCount", &VectorNode::childCount);
     cls_VectorNode.def("isDefined", &VectorNode::isDefined, "pathName"_a);
-    cls_VectorNode.def("get", py::overload_cast<int64_t>(&VectorNode::get, py::const_), "index"_a);
-    cls_VectorNode.def("get", py::overload_cast<const std::string &>(&VectorNode::get, py::const_), "pathName"_a);
+    cls_VectorNode.def("get", (Node (VectorNode::*)(int64_t) const) &VectorNode::get, "index"_a);
+    cls_VectorNode.def("get", (Node (VectorNode::*)(const std::string &) const) &VectorNode::get, "pathName"_a);
     // Maybe there is a more elegant way to do this
     cls_VectorNode.def("append", [](VectorNode &v, StructureNode &node) { v.append(node); });
     cls_VectorNode.def("append", [](VectorNode &v, VectorNode &node) { v.append(node); });
@@ -317,8 +317,8 @@ PYBIND11_MODULE(libe57, m) {
     });
 
     py::class_<CompressedVectorReader> cls_CompressedVectorReader(m, "CompressedVectorReader");
-    cls_CompressedVectorReader.def("read", py::overload_cast<>(&CompressedVectorReader::read));
-    cls_CompressedVectorReader.def("read", py::overload_cast<std::vector<SourceDestBuffer> &>(&CompressedVectorReader::read), "dbufs"_a);
+    cls_CompressedVectorReader.def("read", (unsigned (CompressedVectorReader::*)(void)) &CompressedVectorReader::read);
+    cls_CompressedVectorReader.def("read", (unsigned (CompressedVectorReader::*)(std::vector<SourceDestBuffer> &)) &CompressedVectorReader::read, "dbufs"_a);
     cls_CompressedVectorReader.def("seek", &CompressedVectorReader::seek, "recordNumber"_a);
     cls_CompressedVectorReader.def("close", &CompressedVectorReader::close);
     cls_CompressedVectorReader.def("isOpen", &CompressedVectorReader::isOpen);
@@ -327,8 +327,8 @@ PYBIND11_MODULE(libe57, m) {
     cls_CompressedVectorReader.def("__del__", [](CompressedVectorReader &r) { r.close(); });
 
     py::class_<CompressedVectorWriter> cls_CompressedVectorWriter(m, "CompressedVectorWriter");
-    cls_CompressedVectorWriter.def("write", py::overload_cast<const size_t>(&CompressedVectorWriter::write), "requestedRecordCount"_a);
-    cls_CompressedVectorWriter.def("write", py::overload_cast<std::vector<SourceDestBuffer> &, const size_t>(&CompressedVectorWriter::write), "sbufs"_a, "requestedRecordCount"_a);
+    cls_CompressedVectorWriter.def("write", (void (CompressedVectorWriter::*)(const size_t)) &CompressedVectorWriter::write, "requestedRecordCount"_a);
+    cls_CompressedVectorWriter.def("write", (void (CompressedVectorWriter::*)(std::vector<SourceDestBuffer> &, const size_t)) &CompressedVectorWriter::write, "sbufs"_a, "requestedRecordCount"_a);
     cls_CompressedVectorWriter.def("close", &CompressedVectorWriter::close);
     cls_CompressedVectorWriter.def("isOpen", &CompressedVectorWriter::isOpen);
     cls_CompressedVectorWriter.def("compressedVectorNode", &CompressedVectorWriter::compressedVectorNode);

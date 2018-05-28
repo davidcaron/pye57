@@ -4,6 +4,8 @@
 import io
 import os
 import sys
+import platform
+import subprocess
 
 import setuptools
 from setuptools.command.build_ext import build_ext
@@ -63,10 +65,18 @@ class get_pybind_include(object):
         import pybind11
         return pybind11.get_include(self.user)
 
+
 extra_link_args = []
 
 if DEBUG:
     extra_link_args.append("/DEBUG")
+
+libraries = []
+library_dirs = [LIB_DIR]
+if platform.system() == "Windows":
+    libraries.append("xerces-c_3")
+else:
+    libraries.append("xerces-c")
 
 ext_modules = [
     Extension(
@@ -80,17 +90,15 @@ ext_modules = [
          'libE57Format/src/Encoder.cpp',
          ],
         include_dirs=[
-            'libe57Format/include',
-            'libe57Format/src',
-            'libe57Format/contrib/CRCpp/inc',
+            'libE57Format/include',
+            'libE57Format/src',
+            'libE57Format/contrib/CRCpp/inc',
             INCLUDE,
             get_pybind_include(),
             get_pybind_include(user=True)
         ],
-        libraries=[
-            os.path.join(LIB_DIR, "xerces-c_3"),
-            # "Ole32",
-        ],
+        libraries=libraries,
+        library_dirs=library_dirs,
         language='c++'
     ),
 ]
@@ -133,7 +141,9 @@ class BuildExt(build_ext):
     }
 
     if sys.platform == 'darwin':
-        c_opts['unix'] += ['-stdlib=libc++', '-mmacosx-version-min=10.7']
+        c_opts['unix'] += ['-DMACOS', '-stdlib=libc++', '-mmacosx-version-min=10.7', '-std=c++1y']
+    elif sys.platform == 'linux':
+        c_opts['unix'] += ['-DLINUX']
 
     def build_extensions(self):
         ct = self.compiler.compiler_type
@@ -142,12 +152,16 @@ class BuildExt(build_ext):
             opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
             opts.append('-DREVISION_ID="%s"' % REVISION_ID)
             opts.append(cpp_flag(self.compiler))
+            opts.append('-DCRCPP_USE_CPP11')
+            opts.append('-DCRCPP_BRANCHLESS')
+            opts.append('-Wno-unused-variable')
             if has_flag(self.compiler, '-fvisibility=hidden'):
                 opts.append('-fvisibility=hidden')
         elif ct == 'msvc':
             opts.append('/DVERSION_INFO=\\"%s\\"' % self.distribution.get_version())
             opts.append('/DREVISION_ID=\\"%s\\"' % REVISION_ID)
             opts.append('/DWIN32')
+            opts.append('/DWINDOWS')
             if DEBUG:
                 opts.append('/FS')
         for ext in self.extensions:
