@@ -25,7 +25,8 @@ LIB_DIR = os.path.join(PYTHON_HOME, r"Library", "lib")
 
 REQUIRED = [
     "numpy",
-    "pyquaternion"
+    "pyquaternion",
+    "pybind11",
 ]
 
 REQUIRED_FOR_TESTS = [
