@@ -2,29 +2,24 @@ dist: trusty
 sudo: false
 language: python
 python:
-  - "3.6"
-
-env:
-  global:
-
+- '3.6'
 compiler:
-  - gcc
-  - clang
-
-before_install:
-
+- gcc
+- clang
+before_install: 
 addons:
   apt:
     packages:
-      - libxerces-c-dev
-
+    - libxerces-c-dev
 before_script:
-  - python --version
-  - pip install -r requirements.txt
-  - gcc --version
-  - clang --version
-  - pkg-config xerces-c
-
+- python --version
 script:
-  - python setup.py build_ext -i
-  - python setup.py test
+- python setup.py build_ext -i
+- python setup.py test
+deploy:
+  provider: pypi
+  user: davidcaron
+  password:
+    secure: bJ5m3uuZT3Wc2qJjQiwvnugNaGRPgyH7Enp7zgrPZTgyuFNDhB7fSgRtG+scKGj40WbzaZ7VwfVing3HBiNA2C+JdSUueXJR1sR6miYPHlJ3ZIZKQ2j8vEO1z2aurZ8nObRvbF9EsBYxvFAWcqEmcuKXk6qxJAFkP10zBQz5I/k0ZqO2LB2SczXDs2U99V6KJrFB+WcLQzNme084i9rbx3aUeTgu+QdZPHBRfjLM13vqOBcgAfMD9Xqq2jdwEoegUiBnUyCy1t8EQR9AOzpcmjaDzrRg1ZenitF9VJHBh5gKb7oMzv8JELUtKzJQ5UpZGedG65iB53h/mYYHVQusrNgIG3OD2O2PBpIJp93JEEyfNmDelwCMhors7mfGDUN2ZKpjdtPgAmGnaEjjymEQjWMyBWGoZk8s42MTYdRRxIkdgzO3BGghrQEyw3z5evLmcCjMiH5G81nFKVa5gcJ1U8mm1FjN4LXxKWCFGyHO8/eHXY0jg5ilrPayKaW/g3fqrTInYMgvgMS4qthuoW5AsKLtD4pn0Do2E1cu6Ei6nprgy4qrHRJ1+dR9ReFXA0NoTsg8gjZUQNNPZXqsOPTEBvkB2yNh35s5fljslh7NtUG0PmHWMn92Zeb6wAD1a9ajmR8ywf1TwcLdT+RZsn/mmfDTFNdl5/cXcSWZFDBGXvI=
+  on:
+    tags: true
