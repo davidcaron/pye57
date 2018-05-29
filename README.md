@@ -71,12 +71,18 @@ translation_x = scan_0["pose"]["translation"]["x"]
 
 ## Installation
 
-If you're on Windows and using python 3.5 or 3.6:
-
 `pip install pye57`
 
-Otherwise, you will have to build it yourself (working on linux and macos versions).
+If you're on Windows and using python 3.5 or 3.6, wheels are available.
+
+Otherwise, see the building notes below.
 
 ## Building notes
 
-You need xerces-c to compile. Binaries can be obtained from conda using: `conda install xerces-c`
+### Windows
+
+Binaries of xerces-c can be obtained from conda using: `conda install xerces-c`
+
+### Linux
+
+Install libxerces-c-dev before installing.
