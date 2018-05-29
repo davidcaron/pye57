@@ -1,1 +1,1 @@
-include README.md LICENSE
+global-include *.cpp *.h README* LICENSE*

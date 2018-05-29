@@ -185,7 +185,6 @@ setup(
     install_requires=REQUIRED,
     setup_requires=["pytest-runner"],
     tests_require=REQUIRED_FOR_TESTS,
-    include_package_data=True,
     license='MIT',
     classifiers=[
         'License :: OSI Approved :: MIT License',
