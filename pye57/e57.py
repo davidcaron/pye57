@@ -10,6 +10,12 @@ from pye57.__version__ import __version__
 from pye57 import libe57
 from pye57 import ScanHeader
 
+try:
+    from exceptions import WindowsError
+except ImportError:
+    class WindowsError(OSError):
+        pass
+
 SUPPORTED_POINT_FIELDS = {
     "cartesianX": "d",
     "cartesianY": "d",

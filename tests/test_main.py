@@ -8,6 +8,12 @@ import pye57
 from pye57 import libe57
 from pye57.utils import get_fields
 
+try:
+    from exceptions import WindowsError
+except ImportError:
+    class WindowsError(OSError):
+        pass
+
 
 def test_hi():
     assert libe57.__doc__
