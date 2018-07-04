@@ -5,6 +5,7 @@ import io
 import os
 import sys
 import platform
+import sysconfig
 import subprocess
 
 import setuptools
@@ -19,9 +20,6 @@ AUTHOR = 'David Caron'
 REQUIRES_PYTHON = '>=3.5.*'
 VERSION = None
 
-PYTHON_HOME = os.path.split(sys.executable)[0]
-INCLUDE = os.path.join(PYTHON_HOME, r"Library", "include")
-LIB_DIR = os.path.join(PYTHON_HOME, r"Library", "lib")
 
 REQUIRED = [
     "numpy",
@@ -60,6 +58,11 @@ class get_pybind_include(object):
     method can be invoked. """
 
     def __init__(self, user=False):
+        try:
+            import pybind11
+        except ImportError:
+            if subprocess.call([sys.executable, '-m', 'pip', 'install', 'pybind11']):
+                raise RuntimeError('pybind11 install failed.')
         self.user = user
 
     def __str__(self):
@@ -73,10 +76,15 @@ if DEBUG:
     extra_link_args.append("/DEBUG")
 
 libraries = []
-library_dirs = [LIB_DIR]
+library_dirs = []
 if platform.system() == "Windows":
+    PYTHON_HOME = os.path.split(sys.executable)[0]
+    python_include = os.path.join(PYTHON_HOME, r"Library", "include")
+    library_dirs.append(os.path.join(PYTHON_HOME, r"Library", "lib"))
     libraries.append("xerces-c_3")
 else:
+    paths = sysconfig.get_paths()
+    python_include = paths["include"]
     libraries.append("xerces-c")
 
 ext_modules = [
@@ -94,7 +102,7 @@ ext_modules = [
             'libE57Format/include',
             'libE57Format/src',
             'libE57Format/contrib/CRCpp/inc',
-            INCLUDE,
+            python_include,
             get_pybind_include(),
             get_pybind_include(user=True)
         ],
@@ -197,4 +205,5 @@ setup(
     cmdclass={
         'build_ext': BuildExt,
     },
+    zip_safe=False,
 )
