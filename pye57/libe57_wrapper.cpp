@@ -448,6 +448,13 @@ PYBIND11_MODULE(libe57, m) {
     cls_BlobNode.def("__repr__", [](const BlobNode &node) {
         return "<BlobNode '" + node.elementName() + "'>";
     });
+    cls_BlobNode.def("read_buffer", [](const BlobNode &node) -> py::array {
+        BlobNode copyNode = node;
+        int64_t bufferSizeExpected = copyNode.byteCount();
+        uint8_t *pBuffer = new uint8_t[bufferSizeExpected];
+        copyNode.read(pBuffer, 0, bufferSizeExpected);
+        return py::array(bufferSizeExpected, pBuffer);
+    });
 
     py::class_<ImageFile> cls_ImageFile(m, "ImageFile");
     cls_ImageFile.def(py::init<const std::string &, const std::string &, int>(), "fname"_a, "mode"_a, "checksumPolicy"_a=CHECKSUM_POLICY_ALL);
