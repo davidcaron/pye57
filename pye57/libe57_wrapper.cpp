@@ -493,4 +493,3 @@ PYBIND11_MODULE(libe57, m) {
 
     py::bind_vector<std::vector<e57::SourceDestBuffer>>(m, "VectorSourceDestBuffer");
 }
-
