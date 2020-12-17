@@ -170,12 +170,13 @@ class E57:
         data, buffers = self.make_buffers(fields, n_points)
         header.points.reader(buffers).read()
 
-        valid = ~data["cartesianInvalidState"].astype("?")
+        if "cartesianInvalidState" in data.keys():
+            valid = ~data["cartesianInvalidState"].astype("?")
 
-        for field in data:
-            data[field] = data[field][valid]
+            for field in data:
+                data[field] = data[field][valid]
 
-        del data["cartesianInvalidState"]
+            del data["cartesianInvalidState"]
 
         if transform:
             xyz = np.array([data["cartesianX"], data["cartesianY"], data["cartesianZ"]]).T
