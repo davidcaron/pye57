@@ -68,30 +68,34 @@ scan_0 = data3d[0]
 translation_x = scan_0["pose"]["translation"]["x"]
 ```
 
-
 ## Installation
 
-`pip install pye57`
+### Install required dependencies
 
-If you're on Windows and using python 3.5 or 3.6, wheels are available.
+Install libxerces-c-dev first.
 
-Otherwise, see the building notes below.
+```sudo apt install libxerces-c-dev```
 
-## Building notes
+### Cloning the repository and required submodules
 
-### Windows
+Clone a new repository along with the required submodules
 
-Binaries of xerces-c can be obtained from conda using: `conda install xerces-c`
+```git clone https://github.com/abyss-solutions/pye57.git --recursive```
 
-### Linux
+If the repository has already been previously cloned, but without the --recursive flag
 
-Clone submodules
+```
+cd pye57 # go to the cloned repository
+git submodule init # this will initialise the submodules in the repository
+git submodule update # this will update the submodules in the repository
+```
 
-`git submodule init`
+### Installing the python package
 
-`git submodule update`
+```
+cd pye57
+pip install .
+```
 
-Install libxerces-c-dev before installing.
-
-`sudo apt install libxerces-c-dev`
-
+### Uninstalling the python package
+```pip uninstall pye57```
