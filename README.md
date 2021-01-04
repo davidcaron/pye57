@@ -85,4 +85,12 @@ Binaries of xerces-c can be obtained from conda using: `conda install xerces-c`
 
 ### Linux
 
+Clone submodules
+
+`git submodule init`
+`git submodule update`
+
 Install libxerces-c-dev before installing.
+
+`sudo apt install libxerces-c-dev`
+
