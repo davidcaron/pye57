@@ -9,6 +9,7 @@ from pyquaternion import Quaternion
 from pye57.__version__ import __version__
 from pye57 import libe57
 from pye57 import ScanHeader
+from pye57.utils import convert_spherical_to_cartesian
 
 try:
     from exceptions import WindowsError
@@ -205,15 +206,16 @@ class E57:
             if coordinate_system is COORDINATE_SYSTEMS.CARTESIAN:
                 xyz = np.array([data["cartesianX"], data["cartesianY"], data["cartesianZ"]]).T
                 xyz = self.to_global(xyz, header.rotation, header.translation)
-                data["cartesianX"] = xyz[:, 0]
-                data["cartesianY"] = xyz[:, 1]
-                data["cartesianZ"] = xyz[:, 2]
             elif coordinate_system is COORDINATE_SYSTEMS.SPHERICAL:
                 rae = np.array([data["sphericalRange"], data["sphericalAzimuth"], data["sphericalElevation"]]).T
                 # TODO: global tranform for spherical cooridinates
-                data["sphericalRange"] = rae[:, 0]
-                data["sphericalAzimuth"] = rae[:, 1]
-                data["sphericalElevation"] = rae[:, 2]
+                
+                # rae to xyz
+                xyz = convert_spherical_to_cartesian(rae)
+            
+            data["cartesianX"] = xyz[:, 0]
+            data["cartesianY"] = xyz[:, 1]
+            data["cartesianZ"] = xyz[:, 2]
         return data
 
     def write_scan_raw(self, data: Dict, *, name=None, rotation=None, translation=None, scan_header=None):
