@@ -179,7 +179,8 @@ class E57:
 
         if transform:
             xyz = np.array([data["cartesianX"], data["cartesianY"], data["cartesianZ"]]).T
-            xyz = self.to_global(xyz, header.rotation, header.translation)
+            if header.has_pose():
+                xyz = self.to_global(xyz, header.rotation, header.translation)
             data["cartesianX"] = xyz[:, 0]
             data["cartesianY"] = xyz[:, 1]
             data["cartesianZ"] = xyz[:, 2]
