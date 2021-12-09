@@ -59,7 +59,7 @@ class ScanHeader:
         elif all(x in self.point_fields for x in COORDINATE_SYSTEMS.SPHERICAL.value):
             coordinate_system = COORDINATE_SYSTEMS.SPHERICAL
         else:
-            raise Exception("Scans coordinate system not supported")
+            raise Exception(f"Scans coordinate system not supported, unsupported point field {self.point_fields}")
         return coordinate_system            
 
     @property
