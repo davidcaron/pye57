@@ -3,6 +3,7 @@ from typing import Type
 from pye57 import libe57
 from pye57.libe57 import NodeType
 
+import numpy as np
 
 def get_fields(node):
     return [node.get(id_).elementName() for id_ in range(node.childCount())]
