@@ -205,15 +205,13 @@ class E57:
         if transform:
             if coordinate_system is COORDINATE_SYSTEMS.CARTESIAN:
                 xyz = np.array([data["cartesianX"], data["cartesianY"], data["cartesianZ"]]).T
-                if header.has_pose():
-                    xyz = self.to_global(xyz, header.rotation, header.translation)
             elif coordinate_system is COORDINATE_SYSTEMS.SPHERICAL:
                 rae = np.array([data["sphericalRange"], data["sphericalAzimuth"], data["sphericalElevation"]]).T
-                # TODO: global tranform for spherical cooridinates
-                
                 # rae to xyz
                 xyz = convert_spherical_to_cartesian(rae)
-            
+            # translation to global coordinates
+            if header.has_pose():
+                xyz = self.to_global(xyz, header.rotation, header.translation)
             data["cartesianX"] = xyz[:, 0]
             data["cartesianY"] = xyz[:, 1]
             data["cartesianZ"] = xyz[:, 2]
