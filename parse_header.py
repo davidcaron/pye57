@@ -131,7 +131,7 @@ def main(path):
 
 
 if __name__ == '__main__':
-    path = "../libE57Format/include/E57Foundation.h"
+    path = "../libE57Format/include/E57Format.h"
     class_order = ["Node",
                    "StructureNode",
                    "VectorNode",
