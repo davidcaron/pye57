@@ -8,4 +8,8 @@
 
 build
 dist
+.venv
+tmp
 
+__pycache__
+libe57.cpython*
