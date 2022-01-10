@@ -120,11 +120,11 @@ ext_modules = [
          'libE57Format/src/VectorNodeImpl.cpp',
          'libE57Format/src/WriterImpl.cpp',
          ],
+        define_macros = [('E57_DLL', '')],
         include_dirs=[
             'libE57Format/include',
             'libE57Format/src',
             'libE57Format/extern/CRCpp/inc',
-            'libE57Format/build',
             python_include,
             get_pybind_include(),
             get_pybind_include(user=True)
@@ -134,6 +134,8 @@ ext_modules = [
         language='c++'
     ),
 ]
+
+export_header_path = "libE57Format/include/E57Export.h"
 
 
 # As of Python 3.6, CCompiler has a `has_flag` method.
@@ -199,7 +201,12 @@ class BuildExt(build_ext):
         for ext in self.extensions:
             ext.extra_compile_args = opts
         self.debug = DEBUG
-        build_ext.build_extensions(self)
+
+        open(export_header_path, 'w').close()
+        try:
+            build_ext.build_extensions(self)
+        finally:
+            os.remove(export_header_path)
 
 
 setup(
