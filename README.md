@@ -70,8 +70,6 @@ translation_x = scan_0["pose"]["translation"]["x"]
 
 ## Installation
 
-Refer to https://abyss-solutions.atlassian.net/wiki/spaces/PD/pages/edit-v2/1277558867 on how to transition from pypi pye57 to abyss pye57
-
 ### Install required dependencies
 
 Install libxerces-c-dev first.
@@ -82,7 +80,7 @@ Install libxerces-c-dev first.
 
 Clone a new repository along with the required submodules
 
-```git clone https://github.com/abyss-solutions/pye57.git --recursive```
+```git clone https://github.com/davidcaron/pye57.git --recursive```
 
 If the repository has already been previously cloned, but without the --recursive flag
 
