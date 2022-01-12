@@ -16,9 +16,8 @@ class ScanHeader:
     def from_data3d(cls, data3d):
         return [cls(scan) for scan in data3d]
 
-    def _assert_pose(self):
-        if not self.node.isDefined("pose"):
-            raise ValueError("Scan header doesn't contain a pose")
+    def has_pose(self):
+        return self.node.isDefined("pose")
 
     @property
     def point_count(self):
@@ -26,19 +25,16 @@ class ScanHeader:
 
     @property
     def rotation_matrix(self) -> np.array:
-        self._assert_pose()
         q = Quaternion([e.value() for e in self.node["pose"]["rotation"]])
         return q.rotation_matrix
 
     @property
     def rotation(self) -> np.array:
-        self._assert_pose()
         q = Quaternion([e.value() for e in self.node["pose"]["rotation"]])
         return q.elements
 
     @property
     def translation(self):
-        self._assert_pose()
         return np.array([e.value() for e in self.node["pose"]["translation"]])
 
     def pretty_print(self, node=None, indent=""):
