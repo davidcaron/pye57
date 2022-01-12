@@ -3,8 +3,9 @@
 #include <pybind11/stl_bind.h>
 #include <pybind11/numpy.h>
 
-#include <E57Foundation.h>
-#include <Common.h>
+#include <E57Exception.h>
+#include <E57Format.h>
+#include <E57Version.h>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -41,20 +42,18 @@ PYBIND11_MODULE(libe57, m) {
     try {
         if (p) std::rethrow_exception(p);
     } catch (const E57Exception &e) {
-        exc(E57Utilities().errorCodeToString(e.errorCode()).c_str());
+        exc(Utilities::errorCodeToString(e.errorCode()).c_str());
     }
     });
 
     m.attr("E57_FORMAT_MAJOR") = E57_FORMAT_MAJOR;
     m.attr("E57_FORMAT_MINOR") = E57_FORMAT_MINOR;
-    m.attr("E57_LIBRARY_ID") = E57_LIBRARY_ID;
+    m.attr("E57_LIBRARY_ID") = REVISION_ID;
     m.attr("E57_V1_0_URI") = "http://www.astm.org/COMMIT/E57/2010-e57-v1.0";
     m.attr("CHECKSUM_POLICY_NONE") = CHECKSUM_POLICY_NONE;
     m.attr("CHECKSUM_POLICY_SPARSE") = CHECKSUM_POLICY_SPARSE;
     m.attr("CHECKSUM_POLICY_HALF") = CHECKSUM_POLICY_HALF;
     m.attr("CHECKSUM_POLICY_ALL") = CHECKSUM_POLICY_ALL;
-    m.attr("E57_FOUNDATION_API_MAJOR") = E57_FOUNDATION_API_MAJOR;
-    m.attr("E57_FOUNDATION_API_MINOR") = E57_FOUNDATION_API_MINOR;
     m.attr("E57_INT8_MIN") = E57_INT8_MIN;
     m.attr("E57_INT8_MAX") = E57_INT8_MAX;
     m.attr("E57_INT16_MIN") = E57_INT16_MIN;

@@ -91,17 +91,40 @@ ext_modules = [
     Extension(
         'pye57.libe57',
         ['pye57/libe57_wrapper.cpp',
+         'libE57Format/src/BlobNodeImpl.cpp',
          'libE57Format/src/CheckedFile.cpp',
+         'libE57Format/src/Common.cpp',
+         'libE57Format/src/CompressedVectorNodeImpl.cpp',
+         'libE57Format/src/CompressedVectorReaderImpl.cpp',
+         'libE57Format/src/CompressedVectorWriterImpl.cpp',
+         'libE57Format/src/DecodeChannel.cpp',
          'libE57Format/src/Decoder.cpp',
-         'libE57Format/src/E57Foundation.cpp',
-         'libE57Format/src/E57FoundationImpl.cpp',
+         'libE57Format/src/E57Exception.cpp',
+         'libE57Format/src/E57Format.cpp',
+         'libE57Format/src/E57SimpleData.cpp',
+         'libE57Format/src/E57SimpleReader.cpp',
+         'libE57Format/src/E57SimpleWriter.cpp',
          'libE57Format/src/E57XmlParser.cpp',
          'libE57Format/src/Encoder.cpp',
+         'libE57Format/src/FloatNodeImpl.cpp',
+         'libE57Format/src/ImageFileImpl.cpp',
+         'libE57Format/src/IntegerNodeImpl.cpp',
+         'libE57Format/src/NodeImpl.cpp',
+         'libE57Format/src/Packet.cpp',
+         'libE57Format/src/ReaderImpl.cpp',
+         'libE57Format/src/ScaledIntegerNodeImpl.cpp',
+         'libE57Format/src/SectionHeaders.cpp',
+         'libE57Format/src/SourceDestBufferImpl.cpp',
+         'libE57Format/src/StringNodeImpl.cpp',
+         'libE57Format/src/StructureNodeImpl.cpp',
+         'libE57Format/src/VectorNodeImpl.cpp',
+         'libE57Format/src/WriterImpl.cpp',
          ],
+        define_macros = [('E57_DLL', '')],
         include_dirs=[
             'libE57Format/include',
             'libE57Format/src',
-            'libE57Format/contrib/CRCpp/inc',
+            'libE57Format/extern/CRCpp/inc',
             python_include,
             get_pybind_include(),
             get_pybind_include(user=True)
@@ -111,6 +134,8 @@ ext_modules = [
         language='c++'
     ),
 ]
+
+export_header_path = "libE57Format/include/E57Export.h"
 
 
 # As of Python 3.6, CCompiler has a `has_flag` method.
@@ -176,7 +201,12 @@ class BuildExt(build_ext):
         for ext in self.extensions:
             ext.extra_compile_args = opts
         self.debug = DEBUG
-        build_ext.build_extensions(self)
+
+        open(export_header_path, 'w').close()
+        try:
+            build_ext.build_extensions(self)
+        finally:
+            os.remove(export_header_path)
 
 
 setup(
