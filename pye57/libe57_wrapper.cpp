@@ -434,8 +434,40 @@ PYBIND11_MODULE(libe57, m) {
     py::class_<BlobNode> cls_BlobNode(m, "BlobNode");
     cls_BlobNode.def(py::init<e57::ImageFile, int64_t>(), "destImageFile"_a, "byteCount"_a);
     cls_BlobNode.def("byteCount", &BlobNode::byteCount);
-    cls_BlobNode.def("read", &BlobNode::read, "buf"_a, "start"_a, "byteCount"_a);
-    cls_BlobNode.def("write", &BlobNode::write, "buf"_a, "start"_a, "byteCount"_a);
+    cls_BlobNode.def("read", [](BlobNode& node, py::buffer buf, int64_t start, size_t count) {
+        py::buffer_info info = buf.request();
+
+        if (info.ndim != 1) {
+            throw std::runtime_error("Incompatible buffer dimension!");
+        }
+
+        if (info.format != "B") {
+            throw std::runtime_error("Incompatible buffer type!");
+        }
+
+        if (static_cast<size_t>(info.shape[0]) < count) {
+            throw std::runtime_error("Buffer not large enough to read.");
+        }
+
+        node.read(reinterpret_cast<uint8_t*>(info.ptr), start, count);
+    });
+    cls_BlobNode.def("write", [](BlobNode& node, py::buffer buf, int64_t start, size_t count) {
+        py::buffer_info info = buf.request();
+
+        if (info.ndim != 1) {
+            throw std::runtime_error("Incompatible buffer dimension!");
+        }
+
+        if (info.format != "B") {
+            throw std::runtime_error("Incompatible buffer type!");
+        }
+
+        if (static_cast<size_t>(info.shape[0]) < count) {
+            throw std::runtime_error("Buffer not large enough to write.");
+        }
+
+        node.write(reinterpret_cast<uint8_t*>(info.ptr), start, count);
+    });
     cls_BlobNode.def(py::init<const e57::Node &>(), "n"_a);
     cls_BlobNode.def("isRoot", &BlobNode::isRoot);
     cls_BlobNode.def("parent", &BlobNode::parent);
