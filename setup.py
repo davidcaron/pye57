@@ -34,7 +34,7 @@ if platform.system() == "Windows":
     if conda_library_dir.exists():
         library_dirs.append(str(conda_library_dir / "lib"))
         include_dirs.append(str(conda_library_dir / "include"))
-    
+
     # using cibuildwheel
     xerces_dir = Path(os.environ["TEMP"]) / "xerces_c"
     if xerces_dir.exists():
@@ -42,7 +42,7 @@ if platform.system() == "Windows":
         include_dirs.append(str(xerces_dir / "include"))
         # include xerces-c dll in the package
         shutil.copy2(xerces_dir / "bin" / "xerces-c_3_2.dll", HERE / "src" / "pye57")
-        package_data.append('xerces-c_3_2.dll')
+        package_data.append("xerces-c_3_2.dll")
 
 else:
     libraries.append("xerces-c")
@@ -115,6 +115,10 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: Implementation :: CPython",
     ],
     cmdclass={"build_ext": BuildExt},
