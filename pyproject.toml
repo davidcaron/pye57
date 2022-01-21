@@ -1,0 +1,19 @@
+[build-system]
+requires = [
+    "setuptools>=42",
+    "wheel",
+    "pybind11>=2.8.0",
+]
+
+build-backend = "setuptools.build_meta"
+
+[tool.cibuildwheel]
+# enable this when testing: faster than building from source,
+# but the library is not compatible with manylinux
+# before-all = "yum install -y xerces-c-devel"
+# before-all = "bash scripts/install_xerces_c.sh"
+# before-all = "powershell scripts/install_xerces_c.ps1"
+test-requires = "pytest"
+build = "cp*-manylinux_x86_64 cp*-win_amd64*"
+skip = "cp36*"
+test-command = "python -m pytest {project}/tests"
