@@ -1,0 +1,160 @@
+name: build
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test-ubuntu:
+    name: Ubuntu (python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc g++ libxerces-c-dev
+
+      - name: Install package
+        run: pip install .
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run tests
+        run: python -m pytest tests
+
+  build-and-test-windows:
+    name: Windows (python ${{ matrix.python-version }})
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Setup miniconda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+          activate-environment: pye57
+          channels: conda-forge
+          miniconda-version: "latest"
+
+      - name: Install Dependencies
+        shell: pwsh
+        run: |
+          conda install -y xerces-c
+
+      - name: Configure MSVC console
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install package
+        shell: pwsh
+        run: pip install .
+
+      - name: Install pytest
+        shell: pwsh
+        run: pip install pytest
+
+      - name: Run tests
+        shell: pwsh
+        run: python -m pytest tests
+
+  build_wheels:
+    name: Build wheels
+    runs-on: ${{ matrix.os }}
+    needs:
+      - build-and-test-ubuntu
+      - build-and-test-windows
+    if: startsWith(github.ref, 'refs/tags/v')
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "windows-latest"]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel==2.3.1
+
+      - name: Build wheels (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          python -m cibuildwheel --platform linux --output-dir wheelhouse
+        env:
+          CIBW_BEFORE_ALL_LINUX: "bash scripts/install_xerces_c.sh"
+
+      - name: Build wheels (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          python -m cibuildwheel --platform windows --output-dir wheelhouse
+        env:
+          CIBW_BEFORE_ALL_WINDOWS: "powershell scripts/install_xerces_c.ps1"
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
+
+  make_sdist:
+    name: Make sdist
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - build-and-test-ubuntu
+      - build-and-test-windows
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Build SDist
+        run: pipx run build --sdist
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
+  upload_all:
+    name: Upload to pypi
+    needs: [build_wheels, make_sdist]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: wheels-ubuntu-latest
+          path: dist
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: wheels-windows-latest
+          path: dist
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: sdist
+          path: dist
+
+      - uses: pypa/gh-action-pypi-publish@v1.4.2
+        with:
+          user: __token__
+          password: ${{ secrets.pypi_password }}

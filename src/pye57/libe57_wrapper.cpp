@@ -3,8 +3,9 @@
 #include <pybind11/stl_bind.h>
 #include <pybind11/numpy.h>
 
-#include <E57Foundation.h>
-#include <Common.h>
+#include <E57Exception.h>
+#include <E57Format.h>
+#include <E57Version.h>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -41,20 +42,18 @@ PYBIND11_MODULE(libe57, m) {
     try {
         if (p) std::rethrow_exception(p);
     } catch (const E57Exception &e) {
-        exc(E57Utilities().errorCodeToString(e.errorCode()).c_str());
+        exc(Utilities::errorCodeToString(e.errorCode()).c_str());
     }
     });
 
     m.attr("E57_FORMAT_MAJOR") = E57_FORMAT_MAJOR;
     m.attr("E57_FORMAT_MINOR") = E57_FORMAT_MINOR;
-    m.attr("E57_LIBRARY_ID") = E57_LIBRARY_ID;
+    m.attr("E57_LIBRARY_ID") = REVISION_ID;
     m.attr("E57_V1_0_URI") = "http://www.astm.org/COMMIT/E57/2010-e57-v1.0";
     m.attr("CHECKSUM_POLICY_NONE") = CHECKSUM_POLICY_NONE;
     m.attr("CHECKSUM_POLICY_SPARSE") = CHECKSUM_POLICY_SPARSE;
     m.attr("CHECKSUM_POLICY_HALF") = CHECKSUM_POLICY_HALF;
     m.attr("CHECKSUM_POLICY_ALL") = CHECKSUM_POLICY_ALL;
-    m.attr("E57_FOUNDATION_API_MAJOR") = E57_FOUNDATION_API_MAJOR;
-    m.attr("E57_FOUNDATION_API_MINOR") = E57_FOUNDATION_API_MINOR;
     m.attr("E57_INT8_MIN") = E57_INT8_MIN;
     m.attr("E57_INT8_MAX") = E57_INT8_MAX;
     m.attr("E57_INT16_MIN") = E57_INT16_MIN;
@@ -435,8 +434,40 @@ PYBIND11_MODULE(libe57, m) {
     py::class_<BlobNode> cls_BlobNode(m, "BlobNode");
     cls_BlobNode.def(py::init<e57::ImageFile, int64_t>(), "destImageFile"_a, "byteCount"_a);
     cls_BlobNode.def("byteCount", &BlobNode::byteCount);
-    cls_BlobNode.def("read", &BlobNode::read, "buf"_a, "start"_a, "byteCount"_a);
-    cls_BlobNode.def("write", &BlobNode::write, "buf"_a, "start"_a, "byteCount"_a);
+    cls_BlobNode.def("read", [](BlobNode& node, py::buffer buf, int64_t start, size_t count) {
+        py::buffer_info info = buf.request();
+
+        if (info.ndim != 1) {
+            throw std::runtime_error("Incompatible buffer dimension!");
+        }
+
+        if (info.format != "B") {
+            throw std::runtime_error("Incompatible buffer type!");
+        }
+
+        if (static_cast<size_t>(info.shape[0]) < count) {
+            throw std::runtime_error("Buffer not large enough to read.");
+        }
+
+        node.read(reinterpret_cast<uint8_t*>(info.ptr), start, count);
+    });
+    cls_BlobNode.def("write", [](BlobNode& node, py::buffer buf, int64_t start, size_t count) {
+        py::buffer_info info = buf.request();
+
+        if (info.ndim != 1) {
+            throw std::runtime_error("Incompatible buffer dimension!");
+        }
+
+        if (info.format != "B") {
+            throw std::runtime_error("Incompatible buffer type!");
+        }
+
+        if (static_cast<size_t>(info.shape[0]) < count) {
+            throw std::runtime_error("Buffer not large enough to write.");
+        }
+
+        node.write(reinterpret_cast<uint8_t*>(info.ptr), start, count);
+    });
     cls_BlobNode.def(py::init<const e57::Node &>(), "n"_a);
     cls_BlobNode.def("isRoot", &BlobNode::isRoot);
     cls_BlobNode.def("parent", &BlobNode::parent);
@@ -447,6 +478,12 @@ PYBIND11_MODULE(libe57, m) {
     cls_BlobNode.def("checkInvariant", &BlobNode::checkInvariant, "doRecurse"_a=true, "doUpcast"_a=true);
     cls_BlobNode.def("__repr__", [](const BlobNode &node) {
         return "<BlobNode '" + node.elementName() + "'>";
+    });
+    cls_BlobNode.def("read_buffer", [](BlobNode &node) -> py::array {
+        int64_t bufferSizeExpected = node.byteCount();
+        py::array_t<uint8_t> arr(bufferSizeExpected);
+        node.read(arr.mutable_data(), 0, bufferSizeExpected);
+        return arr;
     });
 
     py::class_<ImageFile> cls_ImageFile(m, "ImageFile");
@@ -487,4 +524,3 @@ PYBIND11_MODULE(libe57, m) {
 
     py::bind_vector<std::vector<e57::SourceDestBuffer>>(m, "VectorSourceDestBuffer");
 }
-

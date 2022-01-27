@@ -2,10 +2,16 @@
 *.cache
 *.pytest_cache
 *.idea
+.vscode
 
 *.egg*
 *.pyd
 
 build
 dist
+wheelhouse
+.venv
+tmp
 
+__pycache__
+libe57.cpython*

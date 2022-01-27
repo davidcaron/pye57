@@ -1,4 +1,0 @@
-numpy
-pyquaternion
-pybind11
-# xerces-c  # conda install xerces-c

@@ -2,9 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/pye57.svg)](https://pypi.org/project/pye57)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pye57.svg)](https://pypi.org/project/pye57)
-[![AppVeyor](https://img.shields.io/appveyor/ci/davidcaron/pye57.svg)](https://ci.appveyor.com/project/davidcaron/pye57)
-[![Travis](https://img.shields.io/travis/davidcaron/pye57.svg)](https://travis-ci.org/davidcaron/pye57)
-
+![GitHub](https://img.shields.io/github/workflow/status/davidcaron/pye57/build)
 
 Python wrapper of [LibE57Format](https://github.com/asmaloney/libE57Format) to read and write .e57 point cloud files
 
@@ -68,21 +66,51 @@ scan_0 = data3d[0]
 translation_x = scan_0["pose"]["translation"]["x"]
 ```
 
-
 ## Installation
 
-`pip install pye57`
+If you're on linux or Windows, a wheel should be available.
 
-If you're on Windows and using python 3.5 or 3.6, wheels are available.
+`python -m pip install pye57`
 
-Otherwise, see the building notes below.
+## Building from source
 
-## Building notes
+### Cloning the repository and required submodules
 
-### Windows
+Clone a new repository along with the required submodules
 
-Binaries of xerces-c can be obtained from conda using: `conda install xerces-c`
+`git clone https://github.com/davidcaron/pye57.git --recursive`
 
-### Linux
+If the repository has already been previously cloned, but without the --recursive flag
 
-Install libxerces-c-dev before installing.
+```
+cd pye57 # go to the cloned repository
+git submodule init # this will initialise the submodules in the repository
+git submodule update # this will update the submodules in the repository
+```
+
+### Dependencies on Linux
+
+Install libxerces-c-dev first.
+
+`sudo apt install libxerces-c-dev`
+
+### Dependencies on Windows
+
+To get xerces-c, you can either build from source or if you're using conda:
+
+`conda install -y xerces-c`
+
+### Run `pip install` from the repo source
+
+```
+cd pye57
+python -m pip install .
+```
+
+### Uninstalling
+
+Use pip again
+
+```
+python -m pip uninstall pye57
+```
