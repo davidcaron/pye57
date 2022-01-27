@@ -1,7 +1,6 @@
 import uuid
 import os
 from typing import Dict
-from enum import Enum, auto
 
 import numpy as np
 from pyquaternion import Quaternion

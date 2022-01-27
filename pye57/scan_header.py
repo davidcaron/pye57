@@ -160,19 +160,19 @@ class ScanHeader:
 
     @property
     def elevationMinimum(self):
-        return self.sphericalBounds["rangeMinimum"].value()
+        return self.sphericalBounds["elevationMinimum"].value()
     
     @property
     def elevationMaximum(self):
-        return self.sphericalBounds["rangeMinimum"].value()
+        return self.sphericalBounds["elevationMaximum"].value()
     
     @property
     def azimuthStart(self):
-        return self.sphericalBounds["rangeMinimum"].value()
+        return self.sphericalBounds["azimuthStart"].value()
     
     @property
     def azimuthEnd(self):
-        return self.sphericalBounds["rangeMinimum"].value()
+        return self.sphericalBounds["azimuthEnd"].value()
     
     @property
     def pose(self):
