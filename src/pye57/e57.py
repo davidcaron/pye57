@@ -194,7 +194,7 @@ class E57:
                 raise ValueError("Unsupported point field: %s" % field)
 
         if rotation is None:
-            rotation = getattr(scan_header, "rotation", np.array([0, 0, 0, 1]))
+            rotation = getattr(scan_header, "rotation", np.array([1, 0, 0, 0]))
 
         if translation is None:
             translation = getattr(scan_header, "translation", np.array([0, 0, 0]))
