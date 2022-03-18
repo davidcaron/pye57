@@ -34,8 +34,9 @@ def convert_spherical_to_cartesian(rae):
     range_ = rae[:, :1]
     theta = rae[:, 1:2]
     phi =  rae[:, 2:3]
+    range_cos_phi = range_ * np.cos(phi)
     return np.concatenate((
-            range_ * np.cos(phi) * np.cos(theta),
-            range_ * np.cos(phi) * np.sin(theta),
-            range_ * np.sin(phi)
-        ), axis=1)
+        range_cos_phi * np.cos(theta),
+        range_cos_phi * np.sin(theta),
+        range_ * np.sin(phi)
+    ), axis=1)
