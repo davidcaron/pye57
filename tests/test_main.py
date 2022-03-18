@@ -38,6 +38,9 @@ def delete_retry(path):
 def e57_path():
     return test_data("test.e57")
 
+@pytest.fixture
+def e57_spherical_path():
+    return test_data("testSpherical.e57")
 
 @pytest.fixture
 def temp_e57_write(request):
@@ -203,6 +206,22 @@ def test_read_xyz(e57_path):
     xyz = e57.read_scan(0)
     assert np.any(xyz)
 
+
+def test_read_header_spherical(e57_spherical_path):
+    f = libe57.ImageFile(e57_spherical_path, "r")
+    data3d = f.root()["data3D"]
+    headers = pye57.ScanHeader.from_data3d(data3d)
+    fields = ['sphericalRange', 'sphericalAzimuth', 'sphericalElevation', 'intensity', 'colorRed', 'colorGreen', 'colorBlue', 'sphericalInvalidState']
+    for header in headers:
+        assert fields == header.point_fields
+    assert headers[0].pretty_print()
+
+
+def test_read_xyz_spherical(e57_spherical_path):
+    e57 = pye57.E57(e57_spherical_path)
+    xyz = e57.read_scan(0)
+    assert np.any(xyz)
+    
 
 def test_read_raw(e57_path):
     e57 = pye57.E57(e57_path)

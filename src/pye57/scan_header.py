@@ -4,7 +4,6 @@ from pyquaternion import Quaternion
 from pye57 import libe57
 from pye57.utils import get_fields, get_node
 
-
 class ScanHeader:
     def __init__(self, scan_node):
         self.node = scan_node
@@ -53,6 +52,15 @@ class ScanHeader:
 
     def __getitem__(self, item):
         return self.node[item]
+    
+    def get_coordinate_system(self, COORDINATE_SYSTEMS):
+        if all(x in self.point_fields for x in COORDINATE_SYSTEMS.CARTESIAN.value):
+            coordinate_system = COORDINATE_SYSTEMS.CARTESIAN
+        elif all(x in self.point_fields for x in COORDINATE_SYSTEMS.SPHERICAL.value):
+            coordinate_system = COORDINATE_SYSTEMS.SPHERICAL
+        else:
+            raise Exception(f"Scans coordinate system not supported, unsupported point field {self.point_fields}")
+        return coordinate_system            
 
     @property
     def guid(self):
@@ -138,6 +146,34 @@ class ScanHeader:
     def zMaximum(self):
         return self.cartesianBounds["zMaximum"].value()
 
+    @property
+    def sphericalBounds(self):
+        return self["sphericalBounds"]
+
+    @property
+    def rangeMinimum(self):
+        return self.sphericalBounds["rangeMinimum"].value()
+
+    @property
+    def rangeMaximum(self):
+        return self.sphericalBounds["rangeMaximum"].value()
+
+    @property
+    def elevationMinimum(self):
+        return self.sphericalBounds["elevationMinimum"].value()
+    
+    @property
+    def elevationMaximum(self):
+        return self.sphericalBounds["elevationMaximum"].value()
+    
+    @property
+    def azimuthStart(self):
+        return self.sphericalBounds["azimuthStart"].value()
+    
+    @property
+    def azimuthEnd(self):
+        return self.sphericalBounds["azimuthEnd"].value()
+    
     @property
     def pose(self):
         return self["pose"]

@@ -1,7 +1,7 @@
 import uuid
 import os
-
 from typing import Dict
+from enum import Enum
 
 import numpy as np
 from pyquaternion import Quaternion
@@ -9,6 +9,7 @@ from pyquaternion import Quaternion
 from pye57.__version__ import __version__
 from pye57 import libe57
 from pye57 import ScanHeader
+from pye57.utils import convert_spherical_to_cartesian
 
 try:
     from exceptions import WindowsError
@@ -16,10 +17,26 @@ except ImportError:
     class WindowsError(OSError):
         pass
 
-SUPPORTED_POINT_FIELDS = {
+
+SUPPORTED_CARTESIAN_POINT_FIELDS = {
     "cartesianX": "d",
     "cartesianY": "d",
     "cartesianZ": "d",
+}
+
+SUPPORTED_SPHERICAL_POINT_FIELDS = {
+    "sphericalRange": "d",
+    "sphericalAzimuth": "d",
+    "sphericalElevation": "d",
+}
+
+class COORDINATE_SYSTEMS(Enum):
+    CARTESIAN = SUPPORTED_CARTESIAN_POINT_FIELDS
+    SPHERICAL = SUPPORTED_SPHERICAL_POINT_FIELDS
+
+SUPPORTED_POINT_FIELDS = {
+    **SUPPORTED_CARTESIAN_POINT_FIELDS,
+    **SUPPORTED_SPHERICAL_POINT_FIELDS,
     "intensity": "f",
     "colorRed": "B",
     "colorGreen": "B",
@@ -27,6 +44,7 @@ SUPPORTED_POINT_FIELDS = {
     "rowIndex": "H",
     "columnIndex": "H",
     "cartesianInvalidState": "b",
+    "sphericalInvalidState": "b",
 }
 
 
@@ -147,7 +165,13 @@ class E57:
         header = self.get_header(index)
         n_points = header.point_count
 
-        fields = ["cartesianX", "cartesianY", "cartesianZ"]
+        coordinate_system = header.get_coordinate_system(COORDINATE_SYSTEMS)
+        if coordinate_system is COORDINATE_SYSTEMS.CARTESIAN:
+            validState = "cartesianInvalidState"
+            fields = list(SUPPORTED_CARTESIAN_POINT_FIELDS.keys())
+        elif coordinate_system is COORDINATE_SYSTEMS.SPHERICAL: 
+            validState = "sphericalInvalidState"
+            fields = list(SUPPORTED_SPHERICAL_POINT_FIELDS.keys())
         if intensity:
             fields.append("intensity")
         if colors:
@@ -157,7 +181,7 @@ class E57:
         if row_column:
             fields.append("rowIndex")
             fields.append("columnIndex")
-        fields.append("cartesianInvalidState")
+        fields.append(validState)
 
         for field in fields[:]:
             if field not in header.point_fields:
@@ -170,22 +194,27 @@ class E57:
         data, buffers = self.make_buffers(fields, n_points)
         header.points.reader(buffers).read()
 
-        if "cartesianInvalidState" in data.keys():
-            valid = ~data["cartesianInvalidState"].astype("?")
+        if validState in data:
+            valid = ~data[validState].astype("?")
 
             for field in data:
                 data[field] = data[field][valid]
 
-            del data["cartesianInvalidState"]
+            del data[validState]
 
         if transform:
-            xyz = np.array([data["cartesianX"], data["cartesianY"], data["cartesianZ"]]).T
+            if coordinate_system is COORDINATE_SYSTEMS.CARTESIAN:
+                xyz = np.array([data["cartesianX"], data["cartesianY"], data["cartesianZ"]]).T
+            elif coordinate_system is COORDINATE_SYSTEMS.SPHERICAL:
+                rae = np.array([data["sphericalRange"], data["sphericalAzimuth"], data["sphericalElevation"]]).T
+                # rae to xyz
+                xyz = convert_spherical_to_cartesian(rae)
+            # translation to global coordinates
             if header.has_pose():
                 xyz = self.to_global(xyz, header.rotation, header.translation)
             data["cartesianX"] = xyz[:, 0]
             data["cartesianY"] = xyz[:, 1]
             data["cartesianZ"] = xyz[:, 2]
-
         return data
 
     def write_scan_raw(self, data: Dict, *, name=None, rotation=None, translation=None, scan_header=None):
