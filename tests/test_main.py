@@ -6,7 +6,6 @@ import numpy as np
 
 import pye57
 from pye57 import libe57
-from pye57.utils import get_fields
 
 try:
     from exceptions import WindowsError
@@ -254,6 +253,18 @@ def test_read_write_single_scan(e57_path, temp_e57_write):
     for field in scan_0:
         assert np.allclose(scan_0[field], scan_0_written[field])
 
+def test_read_write_groups(e57_path, temp_e57_write):
+    e57 = pye57.E57(e57_path)
+    header_source = e57.get_header(0)
+    with pye57.E57(temp_e57_write, mode="w") as e57_write:
+        raw_data_0 = e57.read_scan_raw(0)
+        e57_write.write_scan_raw(raw_data_0, rotation=header_source.rotation, translation=header_source.translation, scan_header = header_source)
+    written = pye57.E57(temp_e57_write)
+    scan_0_groups = e57.get_groups_data(0)
+    scan_0_written_groups = written.get_groups_data(0)
+
+    for field in scan_0_groups:
+        assert np.allclose(scan_0_groups[field], scan_0_written_groups[field])
 
 def test_copy_file(e57_path, temp_e57_write):
     e57 = pye57.E57(e57_path)
