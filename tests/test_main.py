@@ -303,3 +303,13 @@ def test_read_color_absent(e57_path):
 def test_scan_position(e57_path):
     e57 = pye57.E57(e57_path)
     assert np.allclose(e57.scan_position(3), np.array([[3.01323456e+05, 5.04260184e+06, 1.56040279e+01]]))
+
+def test_write_spherical(e57_spherical_path, temp_e57_write):
+    e57 = pye57.E57(e57_spherical_path, mode="r")
+    data = e57.read_scan_raw(0)
+    assert isinstance(data["sphericalRange"], np.ndarray)
+    assert isinstance(data["sphericalAzimuth"], np.ndarray)
+    assert isinstance(data["sphericalElevation"], np.ndarray)
+    e57_write = pye57.E57(temp_e57_write, mode="w")
+    e57_write.write_scan_raw(data)
+    e57_write.close()
