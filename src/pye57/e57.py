@@ -250,7 +250,11 @@ class E57:
             n_points = data["sphericalRange"].shape[0]
             coordinate_system_name = "spherical"
         else:
-            raise ValueError()
+            raise ValueError(
+                "In writing, spherical coordinate system (sphericalRange, "
+                "sphericalAzimuth, sphericalElevation) or cartesian coordinate "
+                "system (cartesianX, cartesianY, cartesianZ) can be used."
+            )
 
         ibox = libe57.StructureNode(self.image_file)
         if "rowIndex" in data and "columnIndex" in data:
@@ -341,7 +345,7 @@ class E57:
             bbox_node.set("elevationMaximum", libe57.FloatNode(self.image_file, bb_max_scaled[2]))
             scan_node.set("SphericalBounds", bbox_node)
         else:
-            raise ValueError()
+            raise ValueError(f"Unsupported coordinate system: {coordinate_system_name}")
 
 
         if rotation is not None and translation is not None:
@@ -405,7 +409,7 @@ class E57:
             field_names.append("sphericalAzimuth")
             field_names.append("sphericalElevation")
         else:
-            raise ValueError()
+            raise ValueError(f"Unsupported coordinate system: {coordinate_system_name}")
 
         if "intensity" in data:
             intensity_min = np.min(data["intensity"])
