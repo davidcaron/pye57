@@ -243,10 +243,12 @@ class E57:
         scan_node.set("atmosphericPressure", libe57.FloatNode(self.image_file, atmosphericPressure))
         scan_node.set("description", libe57.StringNode(self.image_file, "pye57 v%s" % __version__))
 
-        if "cartesianX" in data:
+        if "cartesianX" in data and "cartesianY" in data and "cartesianZ" in data:
             n_points = data["cartesianX"].shape[0]
-        elif "sphericalRange" in data:
+            coordinate_system_name = "cartesian"
+        elif "sphericalRange" in data and  "sphericalAzimuth" in data and "sphericalElevation" in data:
             n_points = data["sphericalRange"].shape[0]
+            coordinate_system_name = "spherical"
         else:
             raise ValueError()
 
@@ -289,7 +291,7 @@ class E57:
             scan_node.set("colorLimits", colorbox)
 
         bbox_node = libe57.StructureNode(self.image_file)
-        if "cartesianX" in data and "cartesianY" in data and "cartesianZ" in data:
+        if coordinate_system_name == "cartesian":
             x, y, z = data["cartesianX"], data["cartesianY"], data["cartesianZ"]
             valid = None
             if "cartesianInvalidState" in data:
@@ -314,7 +316,7 @@ class E57:
             bbox_node.set("zMaximum", libe57.FloatNode(self.image_file, bb_max_scaled[2]))
             scan_node.set("cartesianBounds", bbox_node)
 
-        elif "sphericalRange" in data and  "sphericalAzimuth" in data and "sphericalElevation" in data:
+        elif coordinate_system_name == "spherical":
             r, azimuth, elevation = data["sphericalRange"], data["sphericalAzimuth"], data["sphericalElevation"]
             valid = None
             if "sphericalInvalidState" in data:
@@ -382,7 +384,7 @@ class E57:
         chunk_size = 5000000
 
         field_names = []
-        if "cartesianX" in data and "cartesianY" in data and "cartesianZ" in data:
+        if coordinate_system_name == "cartesian":
             x_node = libe57.FloatNode(self.image_file, center[0], precision, bb_min[0], bb_max[0])
             y_node = libe57.FloatNode(self.image_file, center[1], precision, bb_min[1], bb_max[1])
             z_node = libe57.FloatNode(self.image_file, center[2], precision, bb_min[2], bb_max[2])
@@ -392,7 +394,7 @@ class E57:
             field_names.append("cartesianX")
             field_names.append("cartesianY")
             field_names.append("cartesianZ")
-        elif "sphericalRange" in data and  "sphericalAzimuth" in data and "sphericalElevation" in data:
+        elif coordinate_system_name == "spherical":
             range_node = libe57.FloatNode(self.image_file, center[0], precision, bb_min[0], bb_max[0])
             azimuth_node = libe57.FloatNode(self.image_file, center[1], precision, bb_min[1], bb_max[1])
             elevation_node = libe57.FloatNode(self.image_file, center[2], precision, bb_min[2], bb_max[2])
