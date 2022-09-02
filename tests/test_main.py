@@ -310,6 +310,7 @@ def test_write_spherical(e57_spherical_path, temp_e57_write):
     assert isinstance(data["sphericalRange"], np.ndarray)
     assert isinstance(data["sphericalAzimuth"], np.ndarray)
     assert isinstance(data["sphericalElevation"], np.ndarray)
+    assert isinstance(data["sphericalInvalidState"], np.ndarray)
     e57_write = pye57.E57(temp_e57_write, mode="w")
     e57_write.write_scan_raw(data)
     e57_write.close()
