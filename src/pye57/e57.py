@@ -20,7 +20,7 @@ except ImportError:
 def get_attr_try(object, attribute, default):
     """wraps get_attr_try in try to avoid libe57 exception when attribute is missing"""
     try:
-        return get_attr_try(object, attribute, default)
+        return getattr(object, attribute, default)
     except libe57.E57Exception:
         return default
 
