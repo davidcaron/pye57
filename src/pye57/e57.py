@@ -17,6 +17,12 @@ except ImportError:
     class WindowsError(OSError):
         pass
 
+def get_attr_try(object, attribute, default):
+    """wraps get_attr_try in try to avoid libe57 exception when attribute is missing"""
+    try:
+        return get_attr_try(object, attribute, default)
+    except libe57.E57Exception:
+        return default
 
 SUPPORTED_CARTESIAN_POINT_FIELDS = {
     "cartesianX": "d",
@@ -223,17 +229,17 @@ class E57:
                 raise ValueError("Unsupported point field: %s" % field)
 
         if rotation is None:
-            rotation = getattr(scan_header, "rotation", np.array([1, 0, 0, 0]))
+            rotation = get_attr_try(scan_header, "rotation", np.array([1, 0, 0, 0]))
 
         if translation is None:
-            translation = getattr(scan_header, "translation", np.array([0, 0, 0]))
+            translation = get_attr_try(scan_header, "translation", np.array([0, 0, 0]))
 
         if name is None:
-            name = getattr(scan_header, "name", "Scan %s" % len(self.data3d))
+            name = get_attr_try(scan_header, "name", "Scan %s" % len(self.data3d))
 
-        temperature = getattr(scan_header, "temperature", 0)
-        relativeHumidity = getattr(scan_header, "relativeHumidity", 0)
-        atmosphericPressure = getattr(scan_header, "atmosphericPressure", 0)
+        temperature = get_attr_try(scan_header, "temperature", 0)
+        relativeHumidity = get_attr_try(scan_header, "relativeHumidity", 0)
+        atmosphericPressure = get_attr_try(scan_header, "atmosphericPressure", 0)
 
         scan_node = libe57.StructureNode(self.image_file)
         scan_node.set("guid", libe57.StringNode(self.image_file, "{%s}" % uuid.uuid4()))
@@ -265,8 +271,8 @@ class E57:
         scan_node.set("indexBounds", ibox)
 
         if "intensity" in data:
-            int_min = getattr(scan_header, "intensityMinimum", np.min(data["intensity"]))
-            int_max = getattr(scan_header, "intensityMaximum", np.max(data["intensity"]))
+            int_min = get_attr_try(scan_header, "intensityMinimum", np.min(data["intensity"]))
+            int_max = get_attr_try(scan_header, "intensityMaximum", np.max(data["intensity"]))
             intbox = libe57.StructureNode(self.image_file)
             intbox.set("intensityMinimum", libe57.FloatNode(self.image_file, int_min))
             intbox.set("intensityMaximum", libe57.FloatNode(self.image_file, int_max))
@@ -323,10 +329,10 @@ class E57:
             translation_node.set("z", libe57.FloatNode(self.image_file, translation[2]))
             pose_node.set("translation", translation_node)
 
-        start_datetime = getattr(scan_header, "acquisitionStart_dateTimeValue", 0)
-        start_atomic = getattr(scan_header, "acquisitionStart_isAtomicClockReferenced", False)
-        end_datetime = getattr(scan_header, "acquisitionEnd_dateTimeValue", 0)
-        end_atomic = getattr(scan_header, "acquisitionEnd_isAtomicClockReferenced", False)
+        start_datetime = get_attr_try(scan_header, "acquisitionStart_dateTimeValue", 0)
+        start_atomic = get_attr_try(scan_header, "acquisitionStart_isAtomicClockReferenced", False)
+        end_datetime = get_attr_try(scan_header, "acquisitionEnd_dateTimeValue", 0)
+        end_atomic = get_attr_try(scan_header, "acquisitionEnd_isAtomicClockReferenced", False)
         acquisition_start = libe57.StructureNode(self.image_file)
         scan_node.set("acquisitionStart", acquisition_start)
         acquisition_start.set("dateTimeValue", libe57.FloatNode(self.image_file, start_datetime))
