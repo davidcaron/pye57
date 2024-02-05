@@ -19,7 +19,7 @@ def test_hi():
     assert libe57.__doc__
 
 
-def test_data(*args):
+def sample_data(*args):
     here = os.path.split(__file__)[0]
     return os.path.join(here, "test_data", *args)
 
@@ -36,15 +36,15 @@ def delete_retry(path):
 
 @pytest.fixture
 def e57_path():
-    return test_data("test.e57")
+    return sample_data("test.e57")
 
 @pytest.fixture
 def e57_spherical_path():
-    return test_data("testSpherical.e57")
+    return sample_data("testSpherical.e57")
 
 @pytest.fixture
 def temp_e57_write(request):
-    path = test_data("test_write.e57")
+    path = sample_data("test_write.e57")
     request.addfinalizer(lambda: delete_retry(path))
     return path
 

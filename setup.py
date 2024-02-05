@@ -107,7 +107,7 @@ setup(
     ext_modules=ext_modules,
     packages=["pye57"],
     package_dir={"": "src"},
-    include_package_data=True,
+#    include_package_data=True,
     package_data={"pye57": package_data},
     extras_require={"test": "pytest"},
     license="MIT",

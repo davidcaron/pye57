@@ -6,6 +6,7 @@
 #include <E57Exception.h>
 #include <E57Format.h>
 #include <E57Version.h>
+#include <ASTMVersion.h>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -54,26 +55,6 @@ PYBIND11_MODULE(libe57, m) {
     m.attr("CHECKSUM_POLICY_SPARSE") = CHECKSUM_POLICY_SPARSE;
     m.attr("CHECKSUM_POLICY_HALF") = CHECKSUM_POLICY_HALF;
     m.attr("CHECKSUM_POLICY_ALL") = CHECKSUM_POLICY_ALL;
-    m.attr("E57_INT8_MIN") = E57_INT8_MIN;
-    m.attr("E57_INT8_MAX") = E57_INT8_MAX;
-    m.attr("E57_INT16_MIN") = E57_INT16_MIN;
-    m.attr("E57_INT16_MAX") = E57_INT16_MAX;
-    m.attr("E57_INT32_MIN") = E57_INT32_MIN;
-    m.attr("E57_INT32_MAX") = E57_INT32_MAX;
-    m.attr("E57_INT64_MIN") = E57_INT64_MIN;
-    m.attr("E57_INT64_MAX") = E57_INT64_MAX;
-    m.attr("E57_UINT8_MIN") = E57_UINT8_MIN;
-    m.attr("E57_UINT8_MAX") = E57_UINT8_MAX;
-    m.attr("E57_UINT16_MIN") = E57_UINT16_MIN;
-    m.attr("E57_UINT16_MAX") = E57_UINT16_MAX;
-    m.attr("E57_UINT32_MIN") = E57_UINT32_MIN;
-    m.attr("E57_UINT32_MAX") = E57_UINT32_MAX;
-    m.attr("E57_UINT64_MIN") = E57_UINT64_MIN;
-    m.attr("E57_UINT64_MAX") = E57_UINT64_MAX;
-    m.attr("E57_FLOAT_MIN") = E57_FLOAT_MIN;
-    m.attr("E57_FLOAT_MAX") = E57_FLOAT_MAX;
-    m.attr("E57_DOUBLE_MIN") = E57_DOUBLE_MIN;
-    m.attr("E57_DOUBLE_MAX") = E57_DOUBLE_MAX;
     py::enum_<NodeType>(m, "NodeType")
         .value("E57_STRUCTURE", NodeType::E57_STRUCTURE)
         .value("E57_VECTOR", NodeType::E57_VECTOR)
@@ -357,7 +338,7 @@ PYBIND11_MODULE(libe57, m) {
     });
 
     py::class_<IntegerNode> cls_IntegerNode(m, "IntegerNode");
-    cls_IntegerNode.def(py::init<e57::ImageFile, int64_t, int64_t, int64_t>(), "destImageFile"_a, "value"_a=0, "minimum"_a=E57_INT64_MIN, "maximum"_a=E57_INT64_MAX);
+    cls_IntegerNode.def(py::init<e57::ImageFile, int64_t, int64_t, int64_t>(), "destImageFile"_a, "value"_a=0, "minimum"_a=INT64_MIN, "maximum"_a=INT64_MAX);
     cls_IntegerNode.def("value", &IntegerNode::value);
     cls_IntegerNode.def("minimum", &IntegerNode::minimum);
     cls_IntegerNode.def("maximum", &IntegerNode::maximum);
@@ -399,7 +380,7 @@ PYBIND11_MODULE(libe57, m) {
     });
 
     py::class_<FloatNode> cls_FloatNode(m, "FloatNode");
-    cls_FloatNode.def(py::init<e57::ImageFile, double, FloatPrecision, double, double>(), "destImageFile"_a, "value"_a=0.0, "precision"_a=E57_DOUBLE, "minimum"_a=E57_DOUBLE_MIN, "maximum"_a=E57_DOUBLE_MAX);
+    cls_FloatNode.def(py::init<e57::ImageFile, double, FloatPrecision, double, double>(), "destImageFile"_a, "value"_a=0.0, "precision"_a=E57_DOUBLE, "minimum"_a=DBL_MIN, "maximum"_a=DBL_MAX);
     cls_FloatNode.def("value", &FloatNode::value);
     cls_FloatNode.def("precision", &FloatNode::precision);
     cls_FloatNode.def("minimum", &FloatNode::minimum);
@@ -497,7 +478,7 @@ PYBIND11_MODULE(libe57, m) {
     cls_ImageFile.def("writerCount", &ImageFile::writerCount);
     cls_ImageFile.def("readerCount", &ImageFile::readerCount);
     cls_ImageFile.def("extensionsAdd", &ImageFile::extensionsAdd, "prefix"_a, "uri"_a);
-    cls_ImageFile.def("extensionsLookupPrefix", &ImageFile::extensionsLookupPrefix, "prefix"_a, "uri"_a);
+//    cls_ImageFile.def("extensionsLookupPrefix", &ImageFile::extensionsLookupPrefix, "prefix"_a, "uri"_a);
     cls_ImageFile.def("extensionsLookupUri", &ImageFile::extensionsLookupUri, "uri"_a, "prefix"_a);
     cls_ImageFile.def("extensionsCount", &ImageFile::extensionsCount);
     cls_ImageFile.def("extensionsPrefix", &ImageFile::extensionsPrefix, "index"_a);
