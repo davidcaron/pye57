@@ -103,7 +103,7 @@ class E57:
         self.root.set("e57LibraryVersion", libe57.StringNode(imf, libe57.E57_LIBRARY_ID))
         self.root.set("coordinateMetadata", libe57.StringNode(imf, ""))
         creation_date_time = libe57.StructureNode(imf)
-        creation_date_time.set("dateTimeValue", libe57.FloatNode(imf, 10.0))
+        creation_date_time.set("dateTimeValue", libe57.FloatNode(imf, 0.0))
         creation_date_time.set("isAtomicClockReferenced", libe57.IntegerNode(imf, 0))
         self.root.set("creationDateTime", creation_date_time)
         self.root.set("data3D", libe57.VectorNode(imf, True))
