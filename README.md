@@ -2,7 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/pye57.svg)](https://pypi.org/project/pye57)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pye57.svg)](https://pypi.org/project/pye57)
-![GitHub](https://img.shields.io/github/workflow/status/davidcaron/pye57/build)
+![GitHub](https://img.shields.io/github/actions/workflow/status/davidcaron/pye57/build.yml?branch=master)
 
 Python wrapper of [LibE57Format](https://github.com/asmaloney/libE57Format) to read and write .e57 point cloud files
 
