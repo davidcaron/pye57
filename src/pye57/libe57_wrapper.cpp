@@ -380,7 +380,7 @@ PYBIND11_MODULE(libe57, m) {
     });
 
     py::class_<FloatNode> cls_FloatNode(m, "FloatNode");
-    cls_FloatNode.def(py::init<e57::ImageFile, double, FloatPrecision, double, double>(), "destImageFile"_a, "value"_a=0.0, "precision"_a=E57_DOUBLE, "minimum"_a=DBL_MIN, "maximum"_a=DBL_MAX);
+    cls_FloatNode.def(py::init<e57::ImageFile, double, FloatPrecision, double, double>(), "destImageFile"_a, "value"_a=0.0, "precision"_a=E57_DOUBLE, "minimum"_a=-DBL_MAX, "maximum"_a=DBL_MAX);
     cls_FloatNode.def("value", &FloatNode::value);
     cls_FloatNode.def("precision", &FloatNode::precision);
     cls_FloatNode.def("minimum", &FloatNode::minimum);
