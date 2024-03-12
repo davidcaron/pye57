@@ -243,7 +243,18 @@ class E57:
         scan_node.set("atmosphericPressure", libe57.FloatNode(self.image_file, atmosphericPressure))
         scan_node.set("description", libe57.StringNode(self.image_file, "pye57 v%s" % __version__))
 
-        n_points = data["cartesianX"].shape[0]
+        if "cartesianX" in data and "cartesianY" in data and "cartesianZ" in data:
+            n_points = data["cartesianX"].shape[0]
+            coordinate_system_name = "cartesian"
+        elif "sphericalRange" in data and  "sphericalAzimuth" in data and "sphericalElevation" in data:
+            n_points = data["sphericalRange"].shape[0]
+            coordinate_system_name = "spherical"
+        else:
+            raise ValueError(
+                "In writing, spherical coordinate system (sphericalRange, "
+                "sphericalAzimuth, sphericalElevation) or cartesian coordinate "
+                "system (cartesianX, cartesianY, cartesianZ) can be used."
+            )
 
         ibox = libe57.StructureNode(self.image_file)
         if "rowIndex" in data and "columnIndex" in data:
@@ -284,29 +295,58 @@ class E57:
             scan_node.set("colorLimits", colorbox)
 
         bbox_node = libe57.StructureNode(self.image_file)
-        x, y, z = data["cartesianX"], data["cartesianY"], data["cartesianZ"]
-        valid = None
-        if "cartesianInvalidState" in data:
-            valid = ~data["cartesianInvalidState"].astype("?")
-            x, y, z = x[valid], y[valid], z[valid]
-        bb_min = np.array([x.min(), y.min(), z.min()])
-        bb_max = np.array([x.max(), y.max(), z.max()])
-        del valid, x, y, z
+        if coordinate_system_name == "cartesian":
+            x, y, z = data["cartesianX"], data["cartesianY"], data["cartesianZ"]
+            valid = None
+            if "cartesianInvalidState" in data:
+                valid = ~data["cartesianInvalidState"].astype("?")
+                x, y, z = x[valid], y[valid], z[valid]
+            bb_min = np.array([x.min(), y.min(), z.min()])
+            bb_max = np.array([x.max(), y.max(), z.max()])
+            del valid, x, y, z
 
-        if scan_header is not None:
-            bb_min_scaled = np.array([scan_header.xMinimum, scan_header.yMinimum, scan_header.zMinimum])
-            bb_max_scaled = np.array([scan_header.xMaximum, scan_header.yMaximum, scan_header.zMaximum])
+            if scan_header is not None:
+                bb_min_scaled = np.array([scan_header.xMinimum, scan_header.yMinimum, scan_header.zMinimum])
+                bb_max_scaled = np.array([scan_header.xMaximum, scan_header.yMaximum, scan_header.zMaximum])
+            else:
+                bb_min_scaled = self.to_global(bb_min.reshape(-1, 3), rotation, translation)[0]
+                bb_max_scaled = self.to_global(bb_max.reshape(-1, 3), rotation, translation)[0]
+
+            bbox_node.set("xMinimum", libe57.FloatNode(self.image_file, bb_min_scaled[0]))
+            bbox_node.set("xMaximum", libe57.FloatNode(self.image_file, bb_max_scaled[0]))
+            bbox_node.set("yMinimum", libe57.FloatNode(self.image_file, bb_min_scaled[1]))
+            bbox_node.set("yMaximum", libe57.FloatNode(self.image_file, bb_max_scaled[1]))
+            bbox_node.set("zMinimum", libe57.FloatNode(self.image_file, bb_min_scaled[2]))
+            bbox_node.set("zMaximum", libe57.FloatNode(self.image_file, bb_max_scaled[2]))
+            scan_node.set("cartesianBounds", bbox_node)
+
+        elif coordinate_system_name == "spherical":
+            r, azimuth, elevation = data["sphericalRange"], data["sphericalAzimuth"], data["sphericalElevation"]
+            valid = None
+            if "sphericalInvalidState" in data:
+                valid = ~data["sphericalInvalidState"].astype("?")
+                r, azimuth, elevation = r[valid], azimuth[valid], elevation[valid]
+            bb_min = np.array([r.min(), azimuth.min(), elevation.min()])
+            bb_max = np.array([r.max(), azimuth.max(), elevation.max()])
+            del valid, r, azimuth, elevation
+
+            if scan_header is not None:
+                bb_min_scaled = np.array([scan_header.rangeMinimum, scan_header.azimuthStart, scan_header.elevationMinimum])
+                bb_max_scaled = np.array([scan_header.rangeMaximum, scan_header.azimuthEnd, scan_header.elevationMaximum])
+            else:
+                bb_min_scaled = self.to_global(bb_min.reshape(-1, 3), rotation, translation)[0]
+                bb_max_scaled = self.to_global(bb_max.reshape(-1, 3), rotation, translation)[0]
+
+            bbox_node.set("rangeMinimum", libe57.FloatNode(self.image_file, bb_min_scaled[0]))
+            bbox_node.set("rangeMaximum", libe57.FloatNode(self.image_file, bb_max_scaled[0]))
+            bbox_node.set("azimuthStart", libe57.FloatNode(self.image_file, bb_min_scaled[1]))
+            bbox_node.set("azimuthEnd", libe57.FloatNode(self.image_file, bb_max_scaled[1]))
+            bbox_node.set("elevationMinimum", libe57.FloatNode(self.image_file, bb_min_scaled[2]))
+            bbox_node.set("elevationMaximum", libe57.FloatNode(self.image_file, bb_max_scaled[2]))
+            scan_node.set("SphericalBounds", bbox_node)
         else:
-            bb_min_scaled = self.to_global(bb_min.reshape(-1, 3), rotation, translation)[0]
-            bb_max_scaled = self.to_global(bb_max.reshape(-1, 3), rotation, translation)[0]
+            raise ValueError(f"Unsupported coordinate system: {coordinate_system_name}")
 
-        bbox_node.set("xMinimum", libe57.FloatNode(self.image_file, bb_min_scaled[0]))
-        bbox_node.set("xMaximum", libe57.FloatNode(self.image_file, bb_max_scaled[0]))
-        bbox_node.set("yMinimum", libe57.FloatNode(self.image_file, bb_min_scaled[1]))
-        bbox_node.set("yMaximum", libe57.FloatNode(self.image_file, bb_max_scaled[1]))
-        bbox_node.set("zMinimum", libe57.FloatNode(self.image_file, bb_min_scaled[2]))
-        bbox_node.set("zMaximum", libe57.FloatNode(self.image_file, bb_max_scaled[2]))
-        scan_node.set("cartesianBounds", bbox_node)
 
         if rotation is not None and translation is not None:
             pose_node = libe57.StructureNode(self.image_file)
@@ -347,14 +387,29 @@ class E57:
 
         chunk_size = 5000000
 
-        x_node = libe57.FloatNode(self.image_file, center[0], precision, bb_min[0], bb_max[0])
-        y_node = libe57.FloatNode(self.image_file, center[1], precision, bb_min[1], bb_max[1])
-        z_node = libe57.FloatNode(self.image_file, center[2], precision, bb_min[2], bb_max[2])
-        points_prototype.set("cartesianX", x_node)
-        points_prototype.set("cartesianY", y_node)
-        points_prototype.set("cartesianZ", z_node)
-
-        field_names = ["cartesianX", "cartesianY", "cartesianZ"]
+        field_names = []
+        if coordinate_system_name == "cartesian":
+            x_node = libe57.FloatNode(self.image_file, center[0], precision, bb_min[0], bb_max[0])
+            y_node = libe57.FloatNode(self.image_file, center[1], precision, bb_min[1], bb_max[1])
+            z_node = libe57.FloatNode(self.image_file, center[2], precision, bb_min[2], bb_max[2])
+            points_prototype.set("cartesianX", x_node)
+            points_prototype.set("cartesianY", y_node)
+            points_prototype.set("cartesianZ", z_node)
+            field_names.append("cartesianX")
+            field_names.append("cartesianY")
+            field_names.append("cartesianZ")
+        elif coordinate_system_name == "spherical":
+            range_node = libe57.FloatNode(self.image_file, center[0], precision, bb_min[0], bb_max[0])
+            azimuth_node = libe57.FloatNode(self.image_file, center[1], precision, bb_min[1], bb_max[1])
+            elevation_node = libe57.FloatNode(self.image_file, center[2], precision, bb_min[2], bb_max[2])
+            points_prototype.set("sphericalRange", range_node)
+            points_prototype.set("sphericalAzimuth", azimuth_node)
+            points_prototype.set("sphericalElevation", elevation_node)
+            field_names.append("sphericalRange")
+            field_names.append("sphericalAzimuth")
+            field_names.append("sphericalElevation")
+        else:
+            raise ValueError(f"Unsupported coordinate system: {coordinate_system_name}")
 
         if "intensity" in data:
             intensity_min = np.min(data["intensity"])
@@ -387,12 +442,14 @@ class E57:
             points_prototype.set("cartesianInvalidState", libe57.IntegerNode(self.image_file, 0, min_state, max_state))
             field_names.append("cartesianInvalidState")
 
+        if "sphericalInvalidState" in data:
+            min_state = np.min(data["sphericalInvalidState"])
+            max_state = np.max(data["sphericalInvalidState"])
+            points_prototype.set("sphericalInvalidState", libe57.IntegerNode(self.image_file, 0, min_state, max_state))
+            field_names.append("sphericalInvalidState")
+
         # other fields
-        # // "sphericalRange"
-        # // "sphericalAzimuth"
-        # // "sphericalElevation"
         # // "timeStamp"
-        # // "sphericalInvalidState"
         # // "isColorInvalid"
         # // "isIntensityInvalid"
         # // "isTimeStampInvalid"
