@@ -36,7 +36,7 @@ jobs:
 
   build-and-test-windows:
     name: Windows (python ${{ matrix.python-version }})
-    runs-on: windows-2019
+    runs-on: windows-latest
     strategy:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
@@ -81,10 +81,9 @@ jobs:
     needs:
       - build-and-test-ubuntu
       - build-and-test-windows
-    if: startsWith(github.ref, 'refs/tags/v')
     strategy:
       matrix:
-        os: ["ubuntu-latest", "windows-2019"]
+        os: ["ubuntu-latest", "windows-latest"]
 
     steps:
       - uses: actions/checkout@v2
@@ -102,7 +101,7 @@ jobs:
           CIBW_BEFORE_ALL_LINUX: "bash scripts/install_xerces_c.sh"
 
       - name: Build wheels (Windows)
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-latest'
         run: |
           python -m cibuildwheel --platform windows --output-dir wheelhouse
         env:
