@@ -234,6 +234,7 @@ class E57:
         scan_node = libe57.StructureNode(self.image_file)
         scan_node.set("guid", libe57.StringNode(self.image_file, "{%s}" % uuid.uuid4()))
         scan_node.set("name", libe57.StringNode(self.image_file, name))
+        # Ignore optional fields
         if "temperature" in data:
             temperature = scan_header.temperature
             scan_node.set("temperature", libe57.FloatNode(self.image_file, temperature))
@@ -327,6 +328,7 @@ class E57:
 
         acquisition_start = libe57.StructureNode(self.image_file)
         scan_node.set("acquisitionStart", acquisition_start)
+        # Ignore optional fields
         if "acquisitionStart_dateTimeValue" in data:
             start_datetime = getattr(scan_header, "acquisitionStart_dateTimeValue", 0)
             acquisition_start.set("dateTimeValue", libe57.FloatNode(self.image_file, start_datetime))
