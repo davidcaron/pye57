@@ -197,6 +197,9 @@ PYBIND11_MODULE(libe57, m) {
     cls_StructureNode.def("set", [](StructureNode &node, const std::string &pathName, StringNode &n){
         node.set(pathName, n);
     }, "pathName"_a, "n"_a);
+    cls_StructureNode.def("set", [](StructureNode &node, const std::string &pathName, BlobNode &n){
+        node.set(pathName, n);
+    }, "pathName"_a, "n"_a);
     cls_StructureNode.def(py::init<const e57::Node &>(), "n"_a);
     cls_StructureNode.def("isRoot", &StructureNode::isRoot);
     cls_StructureNode.def("parent", &StructureNode::parent);
