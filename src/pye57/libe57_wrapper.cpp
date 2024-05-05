@@ -271,6 +271,7 @@ PYBIND11_MODULE(libe57, m) {
                                             bool doScaling,
                                             size_t stride=0) {
         py::buffer_info info = np_array.request();
+        const std::string dtype = info.format;
 
         if (info.ndim != 1)
             throw std::runtime_error("Incompatible buffer dimension!");
@@ -279,24 +280,26 @@ PYBIND11_MODULE(libe57, m) {
             new (&s) SourceDestBuffer(imf, pathName, static_cast<int8_t *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(int8_t) : stride);
         else if (info.format == "B")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<uint8_t *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(uint8_t) : stride);
-        else if (info.format == "h")
+        // Handle fixed or native byte order from https://docs.python.org/3/library/struct.html
+        // Note - these may be platform dependent. Could they cause strange bugs on some platforms ?
+        else if (dtype == "h" || dtype == "=h")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<int16_t *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(int16_t) : stride);
-        else if (info.format == "H")
+        else if (dtype == "H" || dtype == "=H")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<uint16_t *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(uint16_t) : stride);
-        else if (info.format == "l")
+        else if (dtype == "l" || dtype == "=l")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<int32_t *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(int32_t) : stride);
-        else if (info.format == "L")
+        else if (dtype == "L" || dtype == "=L")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<uint32_t *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(uint32_t) : stride);
-        else if (info.format == "q")
+        else if (dtype == "q" || dtype == "=q")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<int64_t *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(int64_t) : stride);
-        else if (info.format == "?")
+        else if (dtype == "?")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<bool *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(bool) : stride);
-        else if (info.format == "f")
+        else if (dtype == "f" || dtype == "=f")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<float *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(float) : stride);
-        else if (info.format == "d")
+        else if (dtype == "d" || dtype == "=d")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<double *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(double) : stride);
         else
-            throw py::value_error("Incompatible type (integers: bBhHlLq, bool: ?, floats: fd)");
+            throw py::value_error("Incompatible type (integers: bBhHlLq, bool: ?, floats: fd), got: " + dtype);
     },
     "destImageFile"_a, "pathName"_a, "b"_a, "capacity"_a, "doConversion"_a=false, "doScaling"_a=false, "stride"_a=0);
 //    cls_SourceDestBuffer.def(py::init<e57::ImageFile, const std::string, int8_t *, const size_t, bool, bool, size_t>(), "destImageFile"_a, "pathName"_a, "b"_a, "capacity"_a, "doConversion"_a=false, "doScaling"_a=false, "stride"_a=sizeof(int8_t));
