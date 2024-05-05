@@ -275,6 +275,8 @@ PYBIND11_MODULE(libe57, m) {
             new (&s) SourceDestBuffer(imf, pathName, static_cast<int8_t *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(int8_t) : stride);
         else if (info.format == "B")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<uint8_t *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(uint8_t) : stride);
+        // Handle fixed or native byte order from https://docs.python.org/3/library/struct.html
+        // Note - these may be platform dependent. Could they cause strange bugs on some platforms ?
         else if (dtype == "h" || dtype == "=h")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<int16_t *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(int16_t) : stride);
         else if (dtype == "H" || dtype == "=H")
