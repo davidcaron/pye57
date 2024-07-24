@@ -95,7 +95,7 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          "bash scripts/install_xerces_c.sh"
+          bash ../scripts/install_xerces_c.sh
 
       - name: Install package
         run: pip install .
