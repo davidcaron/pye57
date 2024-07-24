@@ -95,7 +95,7 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          brew install xerces-c
+          "bash scripts/install_xerces_c.sh"
 
       - name: Install package
         run: pip install .
