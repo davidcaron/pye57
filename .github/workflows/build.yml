@@ -94,8 +94,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install build dependencies
+        working-directory: ./scripts
         run: |
-          bash ../scripts/install_xerces_c.sh
+          bash install_xerces_c.sh
 
       - name: Install package
         run: pip install .
