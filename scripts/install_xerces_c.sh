@@ -18,21 +18,23 @@ cd xerces-c-${XERCES_VERSION}
 if [[ "$(uname)" == "Darwin" ]]; then
     echo "Installing dependencies on macOS..."
     brew install autoconf automake libtool
+    echo "Generate configure script using autoreconf..."
+    autoreconf -i
+    echo "Configure Xerces-C for macOS..."
+    ./configure --prefix=/usr/local --enable-static
+    echo "Build Xerces-C..."
+    make
+    echo "Install Xerces-C..."
+    sudo make install
 else
     echo "Installing dependencies on Linux..."
-    sudo apt-get install -y autoconf automake libtool
+    ./reconf
+    ./configure
+    echo "Build Xerces-C..."
+    make
+    echo "Install Xerces-C..."
+    make install
 fi
-
-echo "Generate configure script using autoreconf..."
-autoreconf -i
-
-echo "Configure Xerces-C for macOS..."
-./configure --prefix=/usr/local --enable-static
-
-echo "Build Xerces-C..."
-make
-
-echo "Install Xerces-C..."
-sudo make install
-
 echo "Xerces-C installed successfully."
+
+
