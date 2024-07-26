@@ -1,5 +1,6 @@
 import uuid
 import os
+import warnings
 from typing import Dict
 from enum import Enum
 
@@ -136,6 +137,10 @@ class E57:
         data = {}
         buffers = libe57.VectorSourceDestBuffer()
         for field in header.point_fields:
+            # Skip over unsupported fields
+            if field not in SUPPORTED_POINT_FIELDS:
+                warnings.warn("Unsupported point field: %s" % field)
+                continue
             np_array, buffer = self.make_buffer(field, header.point_count)
             data[field] = np_array
             buffers.append(buffer)
