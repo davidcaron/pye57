@@ -43,15 +43,7 @@ if platform.system() == "Windows":
         # include xerces-c dll in the package
         shutil.copy2(xerces_dir / "bin" / "xerces-c_3_2.dll", HERE / "src" / "pye57")
         package_data.append("xerces-c_3_2.dll")
-elif platform.system() == "Darwin":
-    xerces_dir = Path("/usr/local/")
-    if xerces_dir.exists():
-        # include xerces-c dylib in the package
-        shutil.copy2(xerces_dir / "lib" / "libxerces-c-3.2.dylib", HERE / "src" / "pye57")
-        library_dirs.append(str(xerces_dir / "lib"))
-        include_dirs.append(str(xerces_dir / "include"))
-        package_data.append("libxerces-c.a")
-    libraries.append("xerces-c")
+
 else:
     libraries.append("xerces-c")
 
@@ -64,9 +56,6 @@ ext_modules = [
         libraries=libraries,
         library_dirs=library_dirs,
         language="c++",
-        extra_link_args=[
-            f"-Wl,-rpath,@loader_path",
-        ],
     ),
 ]
 

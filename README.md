@@ -68,21 +68,21 @@ translation_x = scan_0["pose"]["translation"]["x"]
 
 ## Installation
 
-On linux Windows or macos:
+If you're on linux or Windows, a wheel should be available.
 
 `python -m pip install pye57`
 
-## Building from source (for developers)
+## Building from source
 
-### Cloning the repository with required submodule
+### Cloning the repository and required submodules
 
-Clone a new repository along with the libe57Format submodule
+Clone a new repository along with the required submodules
 
 `git clone https://github.com/davidcaron/pye57.git --recursive`
 
 If the repository has already been previously cloned, but without the --recursive flag
 
-```Bash
+```
 cd pye57 # go to the cloned repository
 git submodule init # this will initialise the submodules in the repository
 git submodule update # this will update the submodules in the repository
@@ -102,7 +102,7 @@ To get xerces-c, you can either build from source or if you're using conda:
 
 ### Run `pip install` from the repo source
 
-```Bash
+```
 cd pye57
 python -m pip install .
 ```
@@ -111,6 +111,6 @@ python -m pip install .
 
 Use pip again
 
-```Bash
+```
 python -m pip uninstall pye57
 ```
