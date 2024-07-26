@@ -146,7 +146,7 @@ jobs:
         run: |
           python -m cibuildwheel --platform macos --output-dir wheelhouse
         env:
-          CIBW_BEFORE_ALL_LINUX: "bash scripts/install_xerces_c.sh"
+          CIBW_BEFORE_ALL_MACOS: "bash scripts/install_xerces_c.sh"
 
       - uses: actions/upload-artifact@v2
         with:
