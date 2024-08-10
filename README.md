@@ -68,9 +68,11 @@ translation_x = scan_0["pose"]["translation"]["x"]
 
 ## Installation
 
-On linux Windows or macos:
+On linux, Windows or Apple Silicon:
 
 `python -m pip install pye57`
+
+On macOS with Intel CPU you can try to build from source (advanced users):
 
 ## Building from source (for developers)
 

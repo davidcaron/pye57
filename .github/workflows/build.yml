@@ -113,7 +113,6 @@ jobs:
       - build-and-test-ubuntu
       - build-and-test-windows
       - build-and-test-macos
-    if: startsWith(github.ref, 'refs/tags/v')
     strategy:
       matrix:
         os: ["ubuntu-latest", "windows-2019", "macos-latest"]
@@ -168,7 +167,6 @@ jobs:
   make_sdist:
     name: Make sdist
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
     needs:
       - build-and-test-ubuntu
       - build-and-test-windows
@@ -189,7 +187,6 @@ jobs:
   test_built_wheels:
     name: Test Built Wheels
     runs-on: ${{ matrix.os }}
-    if: startsWith(github.ref, 'refs/tags/v')
     needs: build_wheels
     strategy:
       matrix:
@@ -227,8 +224,8 @@ jobs:
 
       - name: Verify installation
         run: |
-          python -c "import pye57"
-
+          pip install pytest
+          python -m pytest tests
 
   upload_all:
     name: Upload to pypi
