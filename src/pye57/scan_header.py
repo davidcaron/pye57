@@ -24,15 +24,15 @@ class ScanHeader:
 
     @property
     def rotation_matrix(self) -> np.array:
-        
         q = Quaternion([e.value() for e in self.node["pose"]["rotation"]])
         return q.rotation_matrix
 
     @property
     def rotation(self) -> np.array:
         try:
-            q = Quaternion([e.value() for e in self.node["pose"]["rotation"]])
-        except libe57.E57Exception:
+            rotation = self.node["pose"]["rotation"]
+            q = Quaternion([e.value() for e in rotation])
+        except KeyError:
             q = Quaternion()
         return q.elements
 
