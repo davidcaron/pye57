@@ -159,7 +159,7 @@ jobs:
           CIBW_BUILD: "cp*-macosx*"
           CIBW_PROJECT_REQUIRES_PYTHON: ">=3.8, <3.13"
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.os }}
           path: wheelhouse/*.whl
@@ -179,7 +179,7 @@ jobs:
       - name: Build SDist
         run: pipx run build --sdist
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: sdist
           path: dist/*.tar.gz
@@ -202,7 +202,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
           name: wheels-${{ matrix.os }}
           path: dist
@@ -233,22 +233,22 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
           name: wheels-ubuntu-latest
           path: dist
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
           name: wheels-windows-2019
           path: dist
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
           name: wheels-macos-latest
           path: dist
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
           name: sdist
           path: dist
