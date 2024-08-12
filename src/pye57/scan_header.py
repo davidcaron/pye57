@@ -5,6 +5,10 @@ from pye57 import libe57
 from pye57.utils import get_fields, get_node
 
 class ScanHeader:
+    """Provides summary statistics for an individual lidar scan in an E57 file.
+
+    Including the number of points, bounds and pose of the scan.
+    """
     def __init__(self, scan_node):
         self.node = scan_node
         points = self.node["points"]
@@ -29,7 +33,11 @@ class ScanHeader:
 
     @property
     def rotation(self) -> np.array:
-        q = Quaternion([e.value() for e in self.node["pose"]["rotation"]])
+        try:
+            rotation = self.node["pose"]["rotation"]
+            q = Quaternion([e.value() for e in rotation])
+        except KeyError:
+            q = Quaternion()
         return q.elements
 
     @property
