@@ -234,7 +234,7 @@ class E57:
         scan_node = libe57.StructureNode(self.image_file)
         scan_node.set("guid", libe57.StringNode(self.image_file, "{%s}" % uuid.uuid4()))
         scan_node.set("name", libe57.StringNode(self.image_file, name))
-        # Ignore optional fields
+        # Ignore optional fields if they are missing
         if "temperature" in data:
             temperature = scan_header.temperature
             scan_node.set("temperature", libe57.FloatNode(self.image_file, temperature))
