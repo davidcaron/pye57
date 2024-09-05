@@ -114,6 +114,8 @@ setup(
     version=version,
     author="David Caron",
     author_email="dcaron05@gmail.com",
+    maintainer="Graham Knapp",
+    maintainer_email="graham.knapp@gmail.com",
     url="https://www.github.com/davidcaron/pye57",
     description="Python .e57 files reader/writer",
     long_description=long_description,
