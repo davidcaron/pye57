@@ -158,6 +158,8 @@ jobs:
           CIBW_BEFORE_ALL_MACOS: "bash scripts/install_xerces_c.sh"
           CIBW_BUILD: "cp*-macosx*"
           CIBW_PROJECT_REQUIRES_PYTHON: ">=3.8, <3.13"
+          CIBW_ARCHS_MACOS: "x86_64 arm64"
+          CIBW_TEST_SKIP: "*_x86_64"
 
       - uses: actions/upload-artifact@v4
         with:
