@@ -53,7 +53,7 @@ jobs:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
           activate-environment: pye57
-          channels: conda-forge
+          channels: conda-forge,conda-forge/label/python_rc
           miniconda-version: "latest"
 
       - name: Install Dependencies
