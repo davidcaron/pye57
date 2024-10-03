@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
@@ -19,6 +19,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
 
       - name: Install build dependencies
         run: |
@@ -39,7 +40,7 @@ jobs:
     runs-on: windows-2019
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
@@ -52,7 +53,7 @@ jobs:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
           activate-environment: pye57
-          channels: conda-forge
+          channels: conda-forge,conda-forge/label/python_rc
           miniconda-version: "latest"
 
       - name: Install Dependencies
@@ -80,7 +81,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
@@ -91,6 +92,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
 
       - name: Install build dependencies
         working-directory: ./scripts
@@ -125,7 +127,8 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
+          allow-prereleases: true
 
       - name: Install cibuildwheel
         run: |
@@ -139,7 +142,7 @@ jobs:
         env:
           CIBW_BEFORE_ALL_LINUX: "bash scripts/install_xerces_c.sh"
           CIBW_BUILD: "cp*-manylinux_x86_64"
-          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.8, <3.13"
+          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.8, <3.14"
 
       - name: Build wheels (Windows)
         if: matrix.os == 'windows-2019'
@@ -148,7 +151,7 @@ jobs:
         env:
           CIBW_BEFORE_ALL_WINDOWS: "powershell scripts/install_xerces_c.ps1"
           CIBW_BUILD: "cp*-win_amd64*"
-          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.8, <3.13"
+          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.8, <3.14"
 
       - name: Build wheels (macOS)
         if: matrix.os == 'macos-latest'
@@ -157,7 +160,7 @@ jobs:
         env:
           CIBW_BEFORE_ALL_MACOS: "bash scripts/install_xerces_c.sh"
           CIBW_BUILD: "cp*-macosx*"
-          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.8, <3.13"
+          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.8, <3.14"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -191,7 +194,7 @@ jobs:
     strategy:
       matrix:
         os: [ "ubuntu-latest", "windows-2019", "macos-latest" ]
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -201,6 +204,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
 
       - uses: actions/download-artifact@v4
         with:
