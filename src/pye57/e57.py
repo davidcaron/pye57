@@ -2,6 +2,7 @@ import uuid
 import os
 from typing import Dict
 from enum import Enum
+from bisect import bisect_left
 
 import numpy as np
 from pyquaternion import Quaternion
@@ -9,7 +10,7 @@ from pyquaternion import Quaternion
 from pye57.__version__ import __version__
 from pye57 import libe57
 from pye57 import ScanHeader
-from pye57.utils import convert_spherical_to_cartesian
+from pye57.utils import convert_spherical_to_cartesian, get_fields
 
 try:
     from exceptions import WindowsError
@@ -47,6 +48,11 @@ SUPPORTED_POINT_FIELDS = {
     "sphericalInvalidState": "b",
 }
 
+SUPPORTED_GROUP_FIELDS = {
+    "startPointIndex": "uint",
+    "idElementValue": "uint",
+    "pointCount": "uint",
+}
 
 class E57:
     def __init__(self, path, mode="r"):
@@ -110,10 +116,14 @@ class E57:
         self.root.set("images2D", libe57.VectorNode(imf, True))
 
     def make_buffer(self, field_name, capacity, do_conversion=True, do_scaling=True):
-        if field_name not in SUPPORTED_POINT_FIELDS:
-            raise ValueError("Unsupported point field: %s" % field_name)
+        if field_name in SUPPORTED_POINT_FIELDS:
+            FIELD = SUPPORTED_POINT_FIELDS
+        elif field_name in SUPPORTED_GROUP_FIELDS:
+            FIELD = SUPPORTED_GROUP_FIELDS
+        else:
+            raise ValueError("Unsupported field: %s" % field_name)
 
-        np_array = np.empty(capacity, SUPPORTED_POINT_FIELDS[field_name])
+        np_array = np.empty(capacity, FIELD[field_name])
         buffer = libe57.SourceDestBuffer(self.image_file,
                                          field_name,
                                          np_array,
@@ -143,6 +153,48 @@ class E57:
         header.points.reader(buffers).read()
 
         return data
+
+    def get_groups_data(self, index) -> Dict:
+        header = self.get_header(index)
+        raw_data = self.read_scan_raw(index)
+
+        grouping_by_line = header.node["pointGroupingSchemes"]["groupingByLine"]
+        idElementName = grouping_by_line["idElementName"].value()
+        groups = grouping_by_line["groups"]
+        group_fields = get_fields(libe57.StructureNode(groups.prototype()))
+
+        rowColumnIndex = raw_data[idElementName]
+        unique_columns = np.unique(rowColumnIndex)
+
+        data, buffers = self.make_buffers(group_fields, len(unique_columns))
+        groups.reader(buffers).read()
+        return data
+
+    def formatPointGroupingSchemes(self, raw_data, idElementName):
+        columnRowIndex = raw_data[idElementName]
+        unique_columns = np.unique(columnRowIndex)
+
+        startPointIndex = [0]
+        idElementValue = [unique_columns[0]]
+        pointCount = []
+
+        for i, col in enumerate(unique_columns[1:]):
+            idx = bisect_left(columnRowIndex, col)
+            startPointIndex.append(idx)
+            idElementValue.append(col)
+            pCount = idx - startPointIndex[i]
+            pointCount.append(pCount)
+
+        pCount = len(columnRowIndex) - startPointIndex[-1]
+        pointCount.append(pCount)
+
+        res_groups =  {
+            "startPointIndex": np.array(startPointIndex, dtype=int),
+            "idElementValue": np.array(idElementValue, dtype=int),
+            "pointCount": np.array(pointCount, dtype=int)
+        }
+
+        return res_groups
 
     def scan_position(self, index):
         pt = np.array([[0, 0, 0]])
@@ -336,8 +388,42 @@ class E57:
         acquisition_end.set("dateTimeValue", libe57.FloatNode(self.image_file, end_datetime))
         acquisition_end.set("isAtomicClockReferenced", libe57.IntegerNode(self.image_file, end_atomic))
 
-        # todo: pointGroupingSchemes
+        #pointGroupingSchemes
+        hasGroups = scan_header is not None and "pointGroupingSchemes" in scan_header.scan_fields
 
+        if hasGroups:
+            point_grouping_schemes = libe57.StructureNode(self.image_file)
+            scan_node.set("pointGroupingSchemes", point_grouping_schemes)
+
+            groupingByLine_node = libe57.StructureNode(self.image_file)
+            point_grouping_schemes.set("groupingByLine", groupingByLine_node)
+
+            idElementName = scan_header.node["pointGroupingSchemes"]["groupingByLine"]["idElementName"].value()
+            groupingByLine_node.set("idElementName", libe57.StringNode(self.image_file, idElementName))
+
+            unique_elements = np.unique(data[idElementName])
+
+            groups_prototype = libe57.StructureNode(self.image_file)
+
+            startPointIndex_node = libe57.IntegerNode(self.image_file, 0, 0, len(data[idElementName])-1)
+            idElementValue_node =  libe57.IntegerNode(self.image_file, 0, 0, max(unique_elements))
+            pointCount_node =  libe57.IntegerNode(self.image_file, 0, 0, len(data[idElementName]))
+
+            groups_prototype.set("startPointIndex", startPointIndex_node)
+            groups_prototype.set("idElementValue", idElementValue_node)
+            groups_prototype.set("pointCount", pointCount_node)
+
+            group_field_names = ["startPointIndex", "idElementValue", "pointCount"]
+
+            groups_data = self.formatPointGroupingSchemes(data, idElementName)
+
+            groups_arrays, groups_buffers = self.make_buffers(group_field_names, len(unique_elements))
+
+            codecs = libe57.VectorNode(self.image_file, True)
+            groups = libe57.CompressedVectorNode(self.image_file, groups_prototype, codecs)
+            groupingByLine_node.set("groups", groups)
+
+        #points
         points_prototype = libe57.StructureNode(self.image_file)
 
         is_scaled = False
@@ -354,38 +440,38 @@ class E57:
         points_prototype.set("cartesianY", y_node)
         points_prototype.set("cartesianZ", z_node)
 
-        field_names = ["cartesianX", "cartesianY", "cartesianZ"]
+        points_field_names = ["cartesianX", "cartesianY", "cartesianZ"]
 
         if "intensity" in data:
             intensity_min = np.min(data["intensity"])
             intensity_max = np.max(data["intensity"])
             intensity_node = libe57.FloatNode(self.image_file, intensity_min, precision, intensity_min, intensity_max)
             points_prototype.set("intensity", intensity_node)
-            field_names.append("intensity")
+            points_field_names.append("intensity")
 
         if all(color in data for color in ["colorRed", "colorGreen", "colorBlue"]):
             points_prototype.set("colorRed", libe57.IntegerNode(self.image_file, 0, 0, 255))
             points_prototype.set("colorGreen", libe57.IntegerNode(self.image_file, 0, 0, 255))
             points_prototype.set("colorBlue", libe57.IntegerNode(self.image_file, 0, 0, 255))
-            field_names.append("colorRed")
-            field_names.append("colorGreen")
-            field_names.append("colorBlue")
+            points_field_names.append("colorRed")
+            points_field_names.append("colorGreen")
+            points_field_names.append("colorBlue")
 
         if "rowIndex" in data and "columnIndex" in data:
-            min_row = np.min(data["rowIndex"])
+            min_row = min(0, np.min(data["rowIndex"]))
             max_row = np.max(data["rowIndex"])
-            min_col = np.min(data["columnIndex"])
+            min_col = min(0, np.min(data["columnIndex"]))
             max_col = np.max(data["columnIndex"])
             points_prototype.set("rowIndex", libe57.IntegerNode(self.image_file, 0, min_row, max_row))
-            field_names.append("rowIndex")
+            points_field_names.append("rowIndex")
             points_prototype.set("columnIndex", libe57.IntegerNode(self.image_file, 0, min_col, max_col))
-            field_names.append("columnIndex")
+            points_field_names.append("columnIndex")
 
         if "cartesianInvalidState" in data:
             min_state = np.min(data["cartesianInvalidState"])
             max_state = np.max(data["cartesianInvalidState"])
             points_prototype.set("cartesianInvalidState", libe57.IntegerNode(self.image_file, 0, min_state, max_state))
-            field_names.append("cartesianInvalidState")
+            points_field_names.append("cartesianInvalidState")
 
         # other fields
         # // "sphericalRange"
@@ -397,7 +483,7 @@ class E57:
         # // "isIntensityInvalid"
         # // "isTimeStampInvalid"
 
-        arrays, buffers = self.make_buffers(field_names, chunk_size)
+        points_arrays, points_buffers = self.make_buffers(points_field_names, chunk_size)
 
         codecs = libe57.VectorNode(self.image_file, True)
         points = libe57.CompressedVectorNode(self.image_file, points_prototype, codecs)
@@ -405,18 +491,41 @@ class E57:
 
         self.data3d.append(scan_node)
 
-        writer = points.writer(buffers)
+        #Points Writer
+        points_writer = points.writer(points_buffers)
 
         current_index = 0
         while current_index != n_points:
             current_chunk = min(n_points - current_index, chunk_size)
 
             for type_ in SUPPORTED_POINT_FIELDS:
-                if type_ in arrays:
-                    arrays[type_][:current_chunk] = data[type_][current_index:current_index + current_chunk]
-
-            writer.write(current_chunk)
+                if type_ in points_arrays:
+                    points_arrays[type_][:current_chunk] = data[type_][current_index:current_index + current_chunk]
+                
+            points_writer.write(current_chunk)
 
             current_index += current_chunk
+        
+        del points_buffers
 
-        writer.close()
+        points_writer.close()
+
+        #Groups Writer
+        if hasGroups:
+            groups_writer = groups.writer(groups_buffers)
+
+            n_groups = len(unique_elements)
+            current_index = 0
+            while current_index != n_groups:
+                current_chunk = min(n_groups - current_index, chunk_size)
+
+                for type_ in SUPPORTED_GROUP_FIELDS:
+                    if type_ in groups_arrays:
+                        groups_arrays[type_][:current_chunk] = groups_data[type_][current_index:current_index + current_chunk]
+                        
+                    
+                groups_writer.write(current_chunk)
+
+                current_index += current_chunk
+            
+            groups_writer.close()
