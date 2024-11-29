@@ -419,3 +419,27 @@ def test_clone_e57(e57_with_data_and_images_path, temp_e57_write):
 
     in_image.close()
     out_image.close()
+
+
+def test_write_e57_with_rowindex_and_columnindex_omiting_low_values():
+
+    test_file_path = 'temporary_output_cloud.e57'
+    with pye57.E57(test_file_path, mode='w') as e57:
+        # set some test points with missing row and column 0 (so np.min of it in write_scan_raw is larger than 0)
+        data_raw = {}
+        data_raw["cartesianX"] = np.array([0, 1, 2, 3]).astype(float)
+        data_raw["cartesianY"] = np.array([0, 1, 2, 3]).astype(float)
+        data_raw["cartesianZ"] = np.array([0, 1, 2, 3]).astype(float)
+        data_raw["rowIndex"] = np.array([1, 1, 2, 3]).astype(int)
+        data_raw["columnIndex"] = np.array([1, 1, 2, 3]).astype(int)
+
+        try:
+            # the next line will throw without the suggested fix
+            e57.write_scan_raw(data_raw, name='test_output_with_row_and_column')
+        except pye57.libe57.E57Exception as ex:
+            print(ex)
+            assert False
+    
+    assert os.path.isfile(test_file_path)
+    os.remove(test_file_path)
+    assert not os.path.isfile(test_file_path)
