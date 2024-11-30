@@ -376,9 +376,9 @@ class E57:
             max_row = np.max(data["rowIndex"])
             min_col = np.min(data["columnIndex"])
             max_col = np.max(data["columnIndex"])
-            points_prototype.set("rowIndex", libe57.IntegerNode(self.image_file, 0, min_row, max_row))
+            points_prototype.set("rowIndex", libe57.IntegerNode(self.image_file, min_row, min_row, max_row))
             field_names.append("rowIndex")
-            points_prototype.set("columnIndex", libe57.IntegerNode(self.image_file, 0, min_col, max_col))
+            points_prototype.set("columnIndex", libe57.IntegerNode(self.image_file, min_col, min_col, max_col))
             field_names.append("columnIndex")
 
         if "cartesianInvalidState" in data:
