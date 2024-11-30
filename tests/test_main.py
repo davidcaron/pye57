@@ -421,10 +421,9 @@ def test_clone_e57(e57_with_data_and_images_path, temp_e57_write):
     out_image.close()
 
 
-def test_write_e57_with_rowindex_and_columnindex_omiting_low_values():
+def test_write_e57_with_rowindex_and_columnindex_omiting_low_values(temp_e57_write):
 
-    test_file_path = 'temporary_output_cloud.e57'
-    with pye57.E57(test_file_path, mode='w') as e57:
+    with pye57.E57(temp_e57_write, mode='w') as e57:
         # set some test points with missing row and column 0 (so np.min of it in write_scan_raw is larger than 0)
         data_raw = {}
         data_raw["cartesianX"] = np.array([0, 1, 2, 3]).astype(float)
@@ -440,6 +439,4 @@ def test_write_e57_with_rowindex_and_columnindex_omiting_low_values():
             print(ex)
             assert False
     
-    assert os.path.isfile(test_file_path)
-    os.remove(test_file_path)
-    assert not os.path.isfile(test_file_path)
+    assert os.path.isfile(temp_e57_write)
