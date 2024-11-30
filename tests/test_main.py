@@ -429,8 +429,8 @@ def test_write_e57_with_rowindex_and_columnindex_omiting_low_values(temp_e57_wri
         data_raw["cartesianX"] = np.array([0, 1, 2, 3]).astype(float)
         data_raw["cartesianY"] = np.array([0, 1, 2, 3]).astype(float)
         data_raw["cartesianZ"] = np.array([0, 1, 2, 3]).astype(float)
-        data_raw["rowIndex"] = np.array([1, 1, 2, 3]).astype(int)
-        data_raw["columnIndex"] = np.array([1, 1, 2, 3]).astype(int)
+        data_raw["rowIndex"] = np.array([1, 1, 2, 3])
+        data_raw["columnIndex"] = np.array([1, 1, 2, 3])
 
         try:
             # the next line will throw without the suggested fix
