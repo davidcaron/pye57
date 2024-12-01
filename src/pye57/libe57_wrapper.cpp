@@ -7,6 +7,8 @@
 #include <E57Format.h>
 #include <E57Version.h>
 #include <ASTMVersion.h>
+#include <sstream>
+#include <string.h>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -40,11 +42,14 @@ PYBIND11_MODULE(libe57, m) {
 
     static py::exception<E57Exception> exc(m, "E57Exception");
     py::register_exception_translator([](std::exception_ptr p) {
-    try {
-        if (p) std::rethrow_exception(p);
-    } catch (const E57Exception &e) {
-        exc(Utilities::errorCodeToString(e.errorCode()).c_str());
-    }
+        try {
+            if (p) std::rethrow_exception(p);
+        } catch (const E57Exception &e) {
+            std::stringstream ss;
+            e.report(__FILE__, __LINE__, __FUNCTION__, ss);
+            std::string output = e.errorStr() + std::string("\n\n") + ss.str();
+            exc(output.c_str());
+        }
     });
 
     m.attr("E57_FORMAT_MAJOR") = E57_FORMAT_MAJOR;
