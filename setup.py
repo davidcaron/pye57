@@ -90,12 +90,14 @@ class BuildExt(build_ext):
             opts.append("-DCRCPP_USE_CPP11")
             opts.append("-DCRCPP_BRANCHLESS")
             opts.append("-Wno-unused-variable")
+            opts.append("-DE57_ENABLE_DIAGNOSTIC_OUTPUT")
         elif ct == "msvc":
             opts.append(f'/DVERSION_INFO="{version}"')
             opts.append(rf'/DREVISION_ID="\"{revision_id}\""')
             opts.append("/DCRCPP_USE_CPP11")
             opts.append("/DCRCPP_BRANCHLESS")
             opts.append("/DWINDOWS")
+            opts.append("/DE57_ENABLE_DIAGNOSTIC_OUTPUT")
         for ext in self.extensions:
             ext.extra_compile_args = opts
 
