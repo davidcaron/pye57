@@ -28,17 +28,19 @@ class ScanHeader:
 
     @property
     def rotation_matrix(self) -> np.array:
-        q = Quaternion([e.value() for e in self.node["pose"]["rotation"]])
-        return q.rotation_matrix
+        if "rotation" in self.node["pose"]:
+            rot = np.array([[e.value() for e in row] for row in self.node["pose"]["rotation"]])
+        else:
+            rot = np.eye(3)
+        return rot
 
     @property
     def rotation(self) -> np.array:
-        try:
-            rotation = self.node["pose"]["rotation"]
-            q = Quaternion([e.value() for e in rotation])
-        except KeyError:
-            q = Quaternion()
-        return q.elements
+        if "rotation" in self.node["pose"]:
+            rot = np.array([[e.value() for e in row] for row in self.node["pose"]["rotation"]])
+        else:
+            rot = np.eye(3)
+        return rot.flatten()
 
     @property
     def translation(self):
@@ -76,144 +78,252 @@ class ScanHeader:
 
     @property
     def temperature(self):
-        return self["temperature"].value()
+        try:
+            return self["temperature"].value()
+        except:
+            return None
 
     @property
     def relativeHumidity(self):
-        return self["relativeHumidity"].value()
+        try:
+            return self["relativeHumidity"].value()
+        except:
+            return None
 
     @property
     def atmosphericPressure(self):
-        return self["atmosphericPressure"].value()
+        try:
+            return self["atmosphericPressure"].value()
+        except:
+            return None
 
     @property
     def indexBounds(self):
-        return self["indexBounds"]
+        try:
+            return self["indexBounds"]
+        except:
+            return None
 
     @property
     def rowMinimum(self):
-        return self.indexBounds["rowMinimum"].value()
+        try:
+            return self.indexBounds["rowMinimum"].value()
+        except:
+            return None
 
     @property
     def rowMaximum(self):
-        return self.indexBounds["rowMaximum"].value()
+        try:
+            return self.indexBounds["rowMaximum"].value()
+        except:
+            return None
 
     @property
     def columnMinimum(self):
-        return self.indexBounds["columnMinimum"].value()
+        try:
+            return self.indexBounds["columnMinimum"].value()
+        except:
+            return None
 
     @property
     def columnMaximum(self):
-        return self.indexBounds["columnMaximum"].value()
+        try:
+            return self.indexBounds["columnMaximum"].value()
+        except:
+            return None
 
     @property
     def returnMinimum(self):
-        return self.indexBounds["returnMinimum"].value()
+        try:
+            return self.indexBounds["returnMinimum"].value()
+        except:
+            return None
 
     @property
     def returnMaximum(self):
-        return self.indexBounds["returnMaximum"].value()
+        try:
+            return self.indexBounds["returnMaximum"].value()
+        except:
+            return None
 
     @property
     def intensityLimits(self):
-        return self["intensityLimits"]
+        try:
+            return self["intensityLimits"]
+        except:
+            return None
 
     @property
     def intensityMinimum(self):
-        return self.intensityLimits["intensityMinimum"].value()
+        try:
+            return self.intensityLimits["intensityMinimum"].value()
+        except:
+            return None
 
     @property
     def intensityMaximum(self):
-        return self.intensityLimits["intensityMaximum"].value()
+        try:
+            return self.intensityLimits["intensityMaximum"].value()
+        except:
+            return None
 
     @property
     def cartesianBounds(self):
-        return self["cartesianBounds"]
+        try:
+            return self["cartesianBounds"]
+        except:
+            return None
 
     @property
     def xMinimum(self):
-        return self.cartesianBounds["xMinimum"].value()
+        try:
+            return self.cartesianBounds["xMinimum"].value()
+        except:
+            return None
 
     @property
     def xMaximum(self):
-        return self.cartesianBounds["xMaximum"].value()
+        try:
+            return self.cartesianBounds["xMaximum"].value()
+        except:
+            return None
 
     @property
     def yMinimum(self):
-        return self.cartesianBounds["yMinimum"].value()
+        try:
+            return self.cartesianBounds["yMinimum"].value()
+        except:
+            return None
 
     @property
     def yMaximum(self):
-        return self.cartesianBounds["yMaximum"].value()
+        try:
+            return self.cartesianBounds["yMaximum"].value()
+        except:
+            return None
 
     @property
     def zMinimum(self):
-        return self.cartesianBounds["zMinimum"].value()
+        try:
+            return self.cartesianBounds["zMinimum"].value()
+        except:
+            return None
 
     @property
     def zMaximum(self):
-        return self.cartesianBounds["zMaximum"].value()
+        try:
+            return self.cartesianBounds["zMaximum"].value()
+        except:
+            return None
 
     @property
     def sphericalBounds(self):
-        return self["sphericalBounds"]
+        try:
+            return self["sphericalBounds"]
+        except:
+            return None
 
     @property
     def rangeMinimum(self):
-        return self.sphericalBounds["rangeMinimum"].value()
+        try:
+            return self.sphericalBounds["rangeMinimum"].value()
+        except:
+            return None
 
     @property
     def rangeMaximum(self):
-        return self.sphericalBounds["rangeMaximum"].value()
+        try:
+            return self.sphericalBounds["rangeMaximum"].value()
+        except:
+            return None
 
     @property
     def elevationMinimum(self):
-        return self.sphericalBounds["elevationMinimum"].value()
+        try:
+            return self.sphericalBounds["elevationMinimum"].value()
+        except:
+            return None
     
     @property
     def elevationMaximum(self):
-        return self.sphericalBounds["elevationMaximum"].value()
+        try:
+            return self.sphericalBounds["elevationMaximum"].value()
+        except:
+            return None
     
     @property
     def azimuthStart(self):
-        return self.sphericalBounds["azimuthStart"].value()
+        try:
+            return self.sphericalBounds["azimuthStart"].value()
+        except:
+            return None
     
     @property
     def azimuthEnd(self):
-        return self.sphericalBounds["azimuthEnd"].value()
+        try:
+            return self.sphericalBounds["azimuthEnd"].value()
+        except:
+            return None
     
     @property
     def pose(self):
-        return self["pose"]
+        try:
+            return self["pose"]
+        except:
+            return None
 
     @property
     def acquisitionStart(self):
-        return self["acquisitionStart"]
+        try:
+            return self["acquisitionStart"]
+        except:
+            return None
 
     @property
     def acquisitionStart_dateTimeValue(self):
-        return self.acquisitionStart["dateTimeValue"].value()
+        try:
+            return self.acquisitionStart["dateTimeValue"].value()
+        except:
+            return None
 
     @property
     def acquisitionStart_isAtomicClockReferenced(self):
-        return self.acquisitionStart["isAtomicClockReferenced"].value()
+        try:
+            return self.acquisitionStart["isAtomicClockReferenced"].value()
+        except:
+            return None
 
     @property
     def acquisitionEnd(self):
-        return self["acquisitionEnd"]
+        try:
+            return self["acquisitionEnd"]
+        except:
+            return None
 
     @property
     def acquisitionEnd_dateTimeValue(self):
-        return self.acquisitionEnd["dateTimeValue"].value()
+        try:
+            return self.acquisitionEnd["dateTimeValue"].value()
+        except:
+            return None
 
     @property
     def acquisitionEnd_isAtomicClockReferenced(self):
-        return self.acquisitionEnd["isAtomicClockReferenced"].value()
+        try:
+            return self.acquisitionEnd["isAtomicClockReferenced"].value()
+        except:
+            return None
 
     @property
     def pointGroupingSchemes(self):
-        return self["pointGroupingSchemes"]
+        try:
+            return self["pointGroupingSchemes"]
+        except:
+            return None
 
     @property
     def points(self):
-        return self["points"]
+        try:
+            return self["points"]
+        except:
+            return None
