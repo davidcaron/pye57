@@ -39,10 +39,10 @@ assert isinstance(data["columnIndex"], np.ndarray)
 data_raw = e57.read_scan_raw(0)
 
 # writing is also possible, but only using raw data for now
-e57_write = pye57.E57("e57_file_write.e57", mode='w')
-e57_write.write_scan_raw(data_raw)
-# you can specify a header to copy information from
-e57_write.write_scan_raw(data_raw, scan_header=e57.get_header(0))
+with pye57.E57("e57_file_write.e57", mode='w') as e57_write:
+    e57_write.write_scan_raw(data_raw)
+    # you can specify a header to copy information from
+    e57_write.write_scan_raw(data_raw, scan_header=e57.get_header(0))
 
 # the ScanHeader object wraps most of the scan information:
 header = e57.get_header(0)
