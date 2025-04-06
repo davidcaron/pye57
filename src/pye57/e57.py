@@ -110,6 +110,11 @@ class E57:
         self.root.set("images2D", libe57.VectorNode(imf, True))
 
     def make_buffer(self, field_name, capacity, do_conversion=True, do_scaling=True):
+        # now this exception should never get hit through read_scan or read_scan_raw
+        # for read_scan, the headers are constructed, so they should all be supported
+        # for read_scan_raw, it now filters out the unsupported headers
+        # however, if make_buffer or make_buffers gets called, an unsupported field name could be passed in directly
+        # if we don't want users calling them, maybe we could make them private, and this would be an assertion
         if field_name not in SUPPORTED_POINT_FIELDS:
             raise ValueError("Unsupported point field: %s" % field_name)
 
@@ -131,11 +136,22 @@ class E57:
             buffers.append(b)
         return data, buffers
 
-    def read_scan_raw(self, index) -> Dict:
+    def read_scan_raw(self, index, ignore_unsupported_field=False) -> Dict:
         header = self.get_header(index)
+        supported_point_fields = []
+        unsupported_point_fields = []
+        for field in header.point_fields:
+            if field in SUPPORTED_POINT_FIELDS:
+                supported_point_fields.append(field)
+            else:
+                unsupported_point_fields.append(field)
+        if unsupported_point_fields != [] and not ignore_unsupported_field:
+            raise ValueError("Unsupported point fields: %s.\n"
+                            "Consider using 'ignore_unsupported_field' to skip them." % unsupported_point_fields)
+        # could it call make_buffers instead, it looks like the code's identical
         data = {}
         buffers = libe57.VectorSourceDestBuffer()
-        for field in header.point_fields:
+        for field in supported_point_fields:
             np_array, buffer = self.make_buffer(field, header.point_count)
             data[field] = np_array
             buffers.append(buffer)
