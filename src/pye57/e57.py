@@ -136,7 +136,7 @@ class E57:
             buffers.append(b)
         return data, buffers
 
-    def read_scan_raw(self, index, ignore_unsupported_field=False) -> Dict:
+    def read_scan_raw(self, index, ignore_unsupported_fields=False) -> Dict:
         header = self.get_header(index)
         supported_point_fields = []
         unsupported_point_fields = []
@@ -145,9 +145,9 @@ class E57:
                 supported_point_fields.append(field)
             else:
                 unsupported_point_fields.append(field)
-        if unsupported_point_fields != [] and not ignore_unsupported_field:
+        if unsupported_point_fields != [] and not ignore_unsupported_fields:
             raise ValueError("Unsupported point fields: %s.\n"
-                            "Consider using 'ignore_unsupported_field' to skip them." % unsupported_point_fields)
+                            "Consider using 'ignore_unsupported_fields' to skip them." % unsupported_point_fields)
         # could it call make_buffers instead, it looks like the code's identical
         data = {}
         buffers = libe57.VectorSourceDestBuffer()
