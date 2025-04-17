@@ -49,6 +49,10 @@ def e57_with_data_and_images_path():
     # From http://www.libe57.org/data.html
     return sample_data("pumpAVisualReferenceImage.e57")
 
+@pytest.fixture
+def e57_with_normals_path():
+    # created using Python's open3d and CloudCompare
+    return sample_data("testWithNormals.e57")
 
 @pytest.fixture
 def temp_e57_write(request):
@@ -158,6 +162,13 @@ def test_unsupported_point_field(temp_e57_write):
             data = {"cartesianX": np.random.rand(10),
                     "bananas": np.random.rand(10)}
             f.write_scan_raw(data)
+
+
+def test_ignore_unsupported_fields(e57_with_normals_path):
+    e57 = pye57.E57(e57_with_normals_path)
+    with pytest.raises(ValueError):
+        e57.read_scan_raw(0)
+    e57.read_scan_raw(0, ignore_unsupported_fields=True)
 
 
 def test_source_dest_buffers_raises(e57_path):
