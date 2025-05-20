@@ -28,7 +28,11 @@ class ScanHeader:
 
     @property
     def rotation_matrix(self) -> np.array:
-        q = Quaternion([e.value() for e in self.node["pose"]["rotation"]])
+        try:
+            rotation = self.node["pose"]["rotation"]
+            q = Quaternion([e.value() for e in rotation])
+        except libe57.E57Exception:
+            q = Quaternion()
         return q.rotation_matrix
 
     @property
@@ -36,13 +40,17 @@ class ScanHeader:
         try:
             rotation = self.node["pose"]["rotation"]
             q = Quaternion([e.value() for e in rotation])
-        except KeyError:
+        except libe57.E57Exception:
             q = Quaternion()
         return q.elements
 
     @property
     def translation(self):
-        return np.array([e.value() for e in self.node["pose"]["translation"]])
+        try:
+            translation_values = [e.value() for e in self.node["pose"]["translation"]]
+        except libe57.E57Exception:
+            translation_values = [0] * 3
+        return np.array(translation_values)
 
     def pretty_print(self, node=None, indent=""):
         if node is None:

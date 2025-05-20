@@ -55,6 +55,12 @@ def e57_with_normals_path():
     return sample_data("testWithNormals.e57")
 
 @pytest.fixture
+def e57_translation_without_rotation_path():
+    # this e57 was generated using write_scan_raw
+    # however, the line to set the rotation was temporarily commented out
+    return sample_data("translationWithoutRotation.e57")
+
+@pytest.fixture
 def temp_e57_write(request):
     path = sample_data("test_write.e57")
     request.addfinalizer(lambda: delete_retry(path))
@@ -323,6 +329,20 @@ def test_scan_position(e57_path):
     e57 = pye57.E57(e57_path)
     assert np.allclose(e57.scan_position(3), np.array([[3.01323456e+05, 5.04260184e+06, 1.56040279e+01]]))
 
+def test_translation_without_rotation(e57_translation_without_rotation_path):
+    import numpy as np
+    e57 = pye57.E57(e57_translation_without_rotation_path)
+    header = e57.get_header(0)
+    # translation is defined but not rotation:
+    assert header["pose"].isDefined("translation")
+    assert not header["pose"].isDefined("rotation")
+    # an arbitrary translation was defined in the e57:
+    assert np.array_equal(header.translation, np.array([4,5,6]))
+    # when rotation is not defined, the identity is used:
+    assert np.array_equal(header.rotation, np.array([1,0,0,0]))
+    assert np.array_equal(header.rotation_matrix, np.eye(3))
+    # the scan can be read when translation is defined but not rotation:
+    e57.read_scan(0, ignore_missing_fields=True)
 
 BUFFER_TYPES = {
     libe57.FloatNode: 'd',
