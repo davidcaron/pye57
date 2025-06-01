@@ -122,7 +122,7 @@ setup(
     description="Python .e57 files reader/writer",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    install_requires=["numpy", "pyquaternion"],
+    install_requires=["numpy"],
     ext_modules=ext_modules,
     packages=["pye57"],
     package_dir={"": "src"},

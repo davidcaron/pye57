@@ -4,7 +4,7 @@ from typing import Dict
 from enum import Enum
 
 import numpy as np
-from pyquaternion import Quaternion
+from scipy.spatial.transform import Rotation as R
 
 from pye57.__version__ import __version__
 from pye57 import libe57
@@ -167,7 +167,7 @@ class E57:
 
     @staticmethod
     def to_global(points, rotation, translation):
-        rotation_matrix = Quaternion(rotation).rotation_matrix
+        rotation_matrix = R.from_quat(rotation).as_matrix()
         return (np.dot(rotation_matrix, points.T) + translation.reshape(3, 1)).T
 
     def read_scan(self,

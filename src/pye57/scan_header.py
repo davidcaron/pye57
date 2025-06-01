@@ -1,5 +1,5 @@
 import numpy as np
-from pyquaternion import Quaternion
+from scipy.spatial.transform import Rotation as R
 
 from pye57 import libe57
 from pye57.utils import get_fields, get_node
@@ -28,17 +28,17 @@ class ScanHeader:
 
     @property
     def rotation_matrix(self) -> np.array:
-        q = Quaternion([e.value() for e in self.node["pose"]["rotation"]])
-        return q.rotation_matrix
+        q = np.array([e.value() for e in self.node["pose"]["rotation"]])
+        return R.from_quat(q).as_matrix()
 
     @property
     def rotation(self) -> np.array:
         try:
             rotation = self.node["pose"]["rotation"]
-            q = Quaternion([e.value() for e in rotation])
+            q = np.array([e.value() for e in rotation])
         except KeyError:
-            q = Quaternion()
-        return q.elements
+            q = R.identity().as_quat()
+        return q
 
     @property
     def translation(self):
