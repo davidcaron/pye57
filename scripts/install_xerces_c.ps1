@@ -23,7 +23,7 @@ cd xerces-c-${XERCES_VERSION}
 echo "Configure Xerces-C..."
 mkdir build -ea 0
 cd build
-cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_INSTALL_PREFIX="${INSTALL_PREFIX}" ..
+cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_INSTALL_PREFIX="${INSTALL_PREFIX}" ..
 
 echo "Build Xerces-C..."
 cmake --build . --config Release --target install
