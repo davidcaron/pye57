@@ -37,7 +37,7 @@ jobs:
 
   build-and-test-windows:
     name: Windows (python ${{ matrix.python-version }})
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
@@ -117,7 +117,7 @@ jobs:
       - build-and-test-macos
     strategy:
       matrix:
-        os: ["ubuntu-latest", "windows-2019", "macos-latest"]
+        os: ["ubuntu-latest", "windows-2022", "macos-latest"]
 
     steps:
       - uses: actions/checkout@v4
@@ -145,7 +145,7 @@ jobs:
           CIBW_PROJECT_REQUIRES_PYTHON: ">=3.9, <3.14"
 
       - name: Build wheels (Windows)
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
         run: |
           python -m cibuildwheel --platform windows --output-dir wheelhouse
         env:
@@ -193,7 +193,7 @@ jobs:
     needs: build_wheels
     strategy:
       matrix:
-        os: [ "ubuntu-latest", "windows-2019", "macos-latest" ]
+        os: [ "ubuntu-latest", "windows-2022", "macos-latest" ]
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
@@ -219,7 +219,7 @@ jobs:
           pip install $wheel_file
 
       - name: Install wheel(Windows)
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-2022'
         shell: pwsh
         run: |
           $python_version = (python -c "import sys; print('cp{}{}'.format(sys.version_info.major, sys.version_info.minor))").Trim()
@@ -244,7 +244,7 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: wheels-windows-2019
+          name: wheels-windows-2022
           path: dist
 
       - uses: actions/download-artifact@v4
