@@ -45,6 +45,9 @@ SUPPORTED_POINT_FIELDS = {
     "columnIndex": "H",
     "cartesianInvalidState": "b",
     "sphericalInvalidState": "b",
+    "nor:normalX": "f",
+    "nor:normalY": "f",
+    "nor:normalZ": "f"
 }
 
 

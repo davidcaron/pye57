@@ -50,9 +50,10 @@ def e57_with_data_and_images_path():
     return sample_data("pumpAVisualReferenceImage.e57")
 
 @pytest.fixture
-def e57_with_normals_path():
-    # created using Python's open3d and CloudCompare
-    return sample_data("testWithNormals.e57")
+def e57_with_unsupported_field_path():
+    # this e57 was generated using write_scan_raw
+    # the code was temporarily modified to add the field "unsupportedPointFieldName"
+    return sample_data("testWithUnsupportedField.e57")
 
 @pytest.fixture
 def e57_translation_without_rotation_path():
@@ -170,8 +171,8 @@ def test_unsupported_point_field(temp_e57_write):
             f.write_scan_raw(data)
 
 
-def test_ignore_unsupported_fields(e57_with_normals_path):
-    e57 = pye57.E57(e57_with_normals_path)
+def test_ignore_unsupported_fields(e57_with_unsupported_field_path):
+    e57 = pye57.E57(e57_with_unsupported_field_path)
     with pytest.raises(ValueError):
         e57.read_scan_raw(0)
     e57.read_scan_raw(0, ignore_unsupported_fields=True)
