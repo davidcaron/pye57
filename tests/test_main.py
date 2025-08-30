@@ -325,6 +325,27 @@ def test_read_color_absent(e57_path):
     with pytest.raises(ValueError):
         data = e57.read_scan(0, colors=True)
 
+def test_write_read_normals(temp_e57_write):
+    # they don't have to be unit vectors for the test to pass, but that is the standard
+    normal_x = np.array([1, 0.6, 0.8])
+    normal_y = np.array([0, 0,   0.48])
+    normal_z = np.array([0, 0.8, 0.36])
+    with pye57.E57(temp_e57_write, mode='w') as e57_write:
+        e57_write.write_scan_raw({
+            # cartesian values are arbitrary
+            "cartesianX": np.array([1,2,3]),
+            "cartesianY": np.array([4,5,6]),
+            "cartesianZ": np.array([7,8,9]),
+            "nor:normalX": normal_x,
+            "nor:normalY": normal_y,
+            "nor:normalZ": normal_z
+        })
+    e57_read = pye57.E57(temp_e57_write)
+    data_raw = e57_read.read_scan_raw(0)
+    assert np.allclose(normal_x, data_raw["nor:normalX"])
+    assert np.allclose(normal_y, data_raw["nor:normalY"])
+    assert np.allclose(normal_z, data_raw["nor:normalZ"])
+
 
 def test_scan_position(e57_path):
     e57 = pye57.E57(e57_path)

@@ -406,6 +406,23 @@ class E57:
             points_prototype.set("cartesianInvalidState", libe57.IntegerNode(self.image_file, 0, min_state, max_state))
             field_names.append("cartesianInvalidState")
 
+        if all(normal in data for normal in ["nor:normalX", "nor:normalY", "nor:normalZ"]):
+            
+            # libe57 checks for valid prefixes in the extensionsLookupPrefix method (called when checking the pathName in set)
+            # extensionsAdd adds to the list of valid prefixes
+            # the second parameter is the uri, in WriterImpl::NewData3D, it passes the normals doc, so i'm following the same convention
+            self.image_file.extensionsAdd("nor", "http://www.libe57.org/E57_EXT_surface_normals.txt")
+
+            # according to http://www.libe57.org/E57_EXT_surface_normals.txt:
+            # The surface normal shall be considered to be unit length where 1 = sqrt( nor:normalX^2 + nor:normalY^2 + nor:normalZ^2);
+            points_prototype.set("nor:normalX", libe57.FloatNode(self.image_file, 0., precision, -1., 1.))
+            points_prototype.set("nor:normalY", libe57.FloatNode(self.image_file, 0., precision, -1., 1.))
+            points_prototype.set("nor:normalZ", libe57.FloatNode(self.image_file, 0., precision, -1., 1.))
+            field_names.append("nor:normalX")
+            field_names.append("nor:normalY")
+            field_names.append("nor:normalZ")
+
+
         # other fields
         # // "sphericalRange"
         # // "sphericalAzimuth"
