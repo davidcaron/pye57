@@ -247,16 +247,19 @@ class E57:
         if name is None:
             name = getattr(scan_header, "name", "Scan %s" % len(self.data3d))
 
-        temperature = getattr(scan_header, "temperature", 0)
-        relativeHumidity = getattr(scan_header, "relativeHumidity", 0)
-        atmosphericPressure = getattr(scan_header, "atmosphericPressure", 0)
-
         scan_node = libe57.StructureNode(self.image_file)
         scan_node.set("guid", libe57.StringNode(self.image_file, "{%s}" % uuid.uuid4()))
         scan_node.set("name", libe57.StringNode(self.image_file, name))
-        scan_node.set("temperature", libe57.FloatNode(self.image_file, temperature))
-        scan_node.set("relativeHumidity", libe57.FloatNode(self.image_file, relativeHumidity))
-        scan_node.set("atmosphericPressure", libe57.FloatNode(self.image_file, atmosphericPressure))
+        # Ignore optional fields if they are missing
+        if "temperature" in data:
+            temperature = scan_header.temperature
+            scan_node.set("temperature", libe57.FloatNode(self.image_file, temperature))
+        if "relativeHumidity" in data:
+            relativeHumidity = scan_header.relativeHumidity
+            scan_node.set("relativeHumidity", libe57.FloatNode(self.image_file, relativeHumidity))
+        if "atmosphericPressure" in data:
+            atmosphericPressure = scan_header.atmosphericPressure
+            scan_node.set("atmosphericPressure", libe57.FloatNode(self.image_file, atmosphericPressure))
         scan_node.set("description", libe57.StringNode(self.image_file, "pye57 v%s" % __version__))
 
         n_points = data["cartesianX"].shape[0]
@@ -339,18 +342,24 @@ class E57:
             translation_node.set("z", libe57.FloatNode(self.image_file, translation[2]))
             pose_node.set("translation", translation_node)
 
-        start_datetime = getattr(scan_header, "acquisitionStart_dateTimeValue", 0)
-        start_atomic = getattr(scan_header, "acquisitionStart_isAtomicClockReferenced", False)
-        end_datetime = getattr(scan_header, "acquisitionEnd_dateTimeValue", 0)
-        end_atomic = getattr(scan_header, "acquisitionEnd_isAtomicClockReferenced", False)
         acquisition_start = libe57.StructureNode(self.image_file)
         scan_node.set("acquisitionStart", acquisition_start)
-        acquisition_start.set("dateTimeValue", libe57.FloatNode(self.image_file, start_datetime))
-        acquisition_start.set("isAtomicClockReferenced", libe57.IntegerNode(self.image_file, start_atomic))
+        # Ignore optional fields
+        if "acquisitionStart_dateTimeValue" in data:
+            start_datetime = getattr(scan_header, "acquisitionStart_dateTimeValue", 0)
+            acquisition_start.set("dateTimeValue", libe57.FloatNode(self.image_file, start_datetime))
+        if "acquisitionStart_isAtomicClockReferenced" in data:
+            start_atomic = getattr(scan_header, "acquisitionStart_isAtomicClockReferenced", False)
+            acquisition_start.set("isAtomicClockReferenced", libe57.IntegerNode(self.image_file, start_atomic))
+
         acquisition_end = libe57.StructureNode(self.image_file)
         scan_node.set("acquisitionEnd", acquisition_end)
-        acquisition_end.set("dateTimeValue", libe57.FloatNode(self.image_file, end_datetime))
-        acquisition_end.set("isAtomicClockReferenced", libe57.IntegerNode(self.image_file, end_atomic))
+        if "acquisitionEnd_dateTimeValue" in data:
+            end_datetime = getattr(scan_header, "acquisitionEnd_dateTimeValue", 0)
+            acquisition_end.set("dateTimeValue", libe57.FloatNode(self.image_file, end_datetime))
+        if "acquistionEnd_is_AtomicClockReferenced" in data:
+            end_atomic = getattr(scan_header, "acquisitionEnd_isAtomicClockReferenced", False)
+            acquisition_end.set("isAtomicClockReferenced", libe57.IntegerNode(self.image_file, end_atomic))
 
         # todo: pointGroupingSchemes
 
