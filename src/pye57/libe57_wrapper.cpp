@@ -356,7 +356,7 @@ PYBIND11_MODULE(libe57, m) {
     cls_CompressedVectorNode.def("prototype", &CompressedVectorNode::prototype);
     cls_CompressedVectorNode.def("codecs", &CompressedVectorNode::codecs);
     cls_CompressedVectorNode.def("writer", &CompressedVectorNode::writer, "sbufs"_a);
-    cls_CompressedVectorNode.def("reader", &CompressedVectorNode::reader, "dbufs"_a);
+    cls_CompressedVectorNode.def("reader", &CompressedVectorNode::reader, "dbufs"_a, "allowParallel"_a=false);
     cls_CompressedVectorNode.def(py::init<const e57::Node &>(), "n"_a);
     cls_CompressedVectorNode.def("isRoot", &CompressedVectorNode::isRoot);
     cls_CompressedVectorNode.def("parent", &CompressedVectorNode::parent);
