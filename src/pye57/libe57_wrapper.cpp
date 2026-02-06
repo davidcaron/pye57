@@ -6,6 +6,9 @@
 #include <E57Exception.h>
 #include <E57Format.h>
 #include <E57Version.h>
+#include <ASTMVersion.h>
+#include <sstream>
+#include <string.h>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -39,11 +42,14 @@ PYBIND11_MODULE(libe57, m) {
 
     static py::exception<E57Exception> exc(m, "E57Exception");
     py::register_exception_translator([](std::exception_ptr p) {
-    try {
-        if (p) std::rethrow_exception(p);
-    } catch (const E57Exception &e) {
-        exc(Utilities::errorCodeToString(e.errorCode()).c_str());
-    }
+        try {
+            if (p) std::rethrow_exception(p);
+        } catch (const E57Exception &e) {
+            std::stringstream ss;
+            e.report(__FILE__, __LINE__, __FUNCTION__, ss);
+            std::string output = e.errorStr() + std::string("\n\n") + ss.str();
+            exc(output.c_str());
+        }
     });
 
     m.attr("E57_FORMAT_MAJOR") = E57_FORMAT_MAJOR;
@@ -54,26 +60,27 @@ PYBIND11_MODULE(libe57, m) {
     m.attr("CHECKSUM_POLICY_SPARSE") = CHECKSUM_POLICY_SPARSE;
     m.attr("CHECKSUM_POLICY_HALF") = CHECKSUM_POLICY_HALF;
     m.attr("CHECKSUM_POLICY_ALL") = CHECKSUM_POLICY_ALL;
-    m.attr("E57_INT8_MIN") = E57_INT8_MIN;
-    m.attr("E57_INT8_MAX") = E57_INT8_MAX;
-    m.attr("E57_INT16_MIN") = E57_INT16_MIN;
-    m.attr("E57_INT16_MAX") = E57_INT16_MAX;
-    m.attr("E57_INT32_MIN") = E57_INT32_MIN;
-    m.attr("E57_INT32_MAX") = E57_INT32_MAX;
-    m.attr("E57_INT64_MIN") = E57_INT64_MIN;
-    m.attr("E57_INT64_MAX") = E57_INT64_MAX;
-    m.attr("E57_UINT8_MIN") = E57_UINT8_MIN;
-    m.attr("E57_UINT8_MAX") = E57_UINT8_MAX;
-    m.attr("E57_UINT16_MIN") = E57_UINT16_MIN;
-    m.attr("E57_UINT16_MAX") = E57_UINT16_MAX;
-    m.attr("E57_UINT32_MIN") = E57_UINT32_MIN;
-    m.attr("E57_UINT32_MAX") = E57_UINT32_MAX;
-    m.attr("E57_UINT64_MIN") = E57_UINT64_MIN;
-    m.attr("E57_UINT64_MAX") = E57_UINT64_MAX;
-    m.attr("E57_FLOAT_MIN") = E57_FLOAT_MIN;
-    m.attr("E57_FLOAT_MAX") = E57_FLOAT_MAX;
-    m.attr("E57_DOUBLE_MIN") = E57_DOUBLE_MIN;
-    m.attr("E57_DOUBLE_MAX") = E57_DOUBLE_MAX;
+    m.attr("E57_INT8_MIN") = INT8_MIN;
+    // for some reason INT8_MAX casts to a string not to an int !
+    m.attr("E57_INT8_MAX") = 127;
+    m.attr("E57_INT16_MIN") = INT16_MIN;
+    m.attr("E57_INT16_MAX") = INT16_MAX;
+    m.attr("E57_INT32_MIN") = INT32_MIN;
+    m.attr("E57_INT32_MAX") = INT32_MAX;
+    m.attr("E57_INT64_MIN") = INT64_MIN;
+    m.attr("E57_INT64_MAX") = INT64_MAX;
+    m.attr("E57_UINT8_MIN") = UINT8_MIN;
+    m.attr("E57_UINT8_MAX") = UINT8_MAX;
+    m.attr("E57_UINT16_MIN") = UINT16_MIN;
+    m.attr("E57_UINT16_MAX") = UINT16_MAX;
+    m.attr("E57_UINT32_MIN") = UINT32_MIN;
+    m.attr("E57_UINT32_MAX") = UINT32_MAX;
+    m.attr("E57_UINT64_MIN") = UINT64_MIN;
+    m.attr("E57_UINT64_MAX") = UINT64_MAX;
+    m.attr("E57_FLOAT_MIN") = FLOAT_MIN;
+    m.attr("E57_FLOAT_MAX") = FLOAT_MAX;
+    m.attr("E57_DOUBLE_MIN") = DOUBLE_MIN;
+    m.attr("E57_DOUBLE_MAX") = DOUBLE_MAX;
     py::enum_<NodeType>(m, "NodeType")
         .value("E57_STRUCTURE", NodeType::E57_STRUCTURE)
         .value("E57_VECTOR", NodeType::E57_VECTOR)
@@ -195,6 +202,9 @@ PYBIND11_MODULE(libe57, m) {
     cls_StructureNode.def("set", [](StructureNode &node, const std::string &pathName, StringNode &n){
         node.set(pathName, n);
     }, "pathName"_a, "n"_a);
+    cls_StructureNode.def("set", [](StructureNode &node, const std::string &pathName, BlobNode &n){
+        node.set(pathName, n);
+    }, "pathName"_a, "n"_a);
     cls_StructureNode.def(py::init<const e57::Node &>(), "n"_a);
     cls_StructureNode.def("isRoot", &StructureNode::isRoot);
     cls_StructureNode.def("parent", &StructureNode::parent);
@@ -266,6 +276,7 @@ PYBIND11_MODULE(libe57, m) {
                                             bool doScaling,
                                             size_t stride=0) {
         py::buffer_info info = np_array.request();
+        const std::string dtype = info.format;
 
         if (info.ndim != 1)
             throw std::runtime_error("Incompatible buffer dimension!");
@@ -274,24 +285,26 @@ PYBIND11_MODULE(libe57, m) {
             new (&s) SourceDestBuffer(imf, pathName, static_cast<int8_t *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(int8_t) : stride);
         else if (info.format == "B")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<uint8_t *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(uint8_t) : stride);
-        else if (info.format == "h")
+        // Handle fixed or native byte order from https://docs.python.org/3/library/struct.html
+        // Note - these may be platform dependent. Could they cause strange bugs on some platforms ?
+        else if (dtype == "h" || dtype == "=h")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<int16_t *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(int16_t) : stride);
-        else if (info.format == "H")
+        else if (dtype == "H" || dtype == "=H")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<uint16_t *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(uint16_t) : stride);
-        else if (info.format == "l")
+        else if (dtype == "l" || dtype == "=l")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<int32_t *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(int32_t) : stride);
-        else if (info.format == "L")
+        else if (dtype == "L" || dtype == "=L")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<uint32_t *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(uint32_t) : stride);
-        else if (info.format == "q")
+        else if (dtype == "q" || dtype == "=q")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<int64_t *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(int64_t) : stride);
-        else if (info.format == "?")
+        else if (dtype == "?")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<bool *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(bool) : stride);
-        else if (info.format == "f")
+        else if (dtype == "f" || dtype == "=f")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<float *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(float) : stride);
-        else if (info.format == "d")
+        else if (dtype == "d" || dtype == "=d")
             new (&s) SourceDestBuffer(imf, pathName, static_cast<double *>(info.ptr), capacity, doConversion, doScaling, (stride == 0) ? sizeof(double) : stride);
         else
-            throw py::value_error("Incompatible type (integers: bBhHlLq, bool: ?, floats: fd)");
+            throw py::value_error("Incompatible type (integers: bBhHlLq, bool: ?, floats: fd), got: " + dtype);
     },
     "destImageFile"_a, "pathName"_a, "b"_a, "capacity"_a, "doConversion"_a=false, "doScaling"_a=false, "stride"_a=0);
 //    cls_SourceDestBuffer.def(py::init<e57::ImageFile, const std::string, int8_t *, const size_t, bool, bool, size_t>(), "destImageFile"_a, "pathName"_a, "b"_a, "capacity"_a, "doConversion"_a=false, "doScaling"_a=false, "stride"_a=sizeof(int8_t));
@@ -357,7 +370,7 @@ PYBIND11_MODULE(libe57, m) {
     });
 
     py::class_<IntegerNode> cls_IntegerNode(m, "IntegerNode");
-    cls_IntegerNode.def(py::init<e57::ImageFile, int64_t, int64_t, int64_t>(), "destImageFile"_a, "value"_a=0, "minimum"_a=E57_INT64_MIN, "maximum"_a=E57_INT64_MAX);
+    cls_IntegerNode.def(py::init<e57::ImageFile, int64_t, int64_t, int64_t>(), "destImageFile"_a, "value"_a=0, "minimum"_a=INT64_MIN, "maximum"_a=INT64_MAX);
     cls_IntegerNode.def("value", &IntegerNode::value);
     cls_IntegerNode.def("minimum", &IntegerNode::minimum);
     cls_IntegerNode.def("maximum", &IntegerNode::maximum);
@@ -399,7 +412,7 @@ PYBIND11_MODULE(libe57, m) {
     });
 
     py::class_<FloatNode> cls_FloatNode(m, "FloatNode");
-    cls_FloatNode.def(py::init<e57::ImageFile, double, FloatPrecision, double, double>(), "destImageFile"_a, "value"_a=0.0, "precision"_a=E57_DOUBLE, "minimum"_a=E57_DOUBLE_MIN, "maximum"_a=E57_DOUBLE_MAX);
+    cls_FloatNode.def(py::init<e57::ImageFile, double, FloatPrecision, double, double>(), "destImageFile"_a, "value"_a=0.0, "precision"_a=E57_DOUBLE, "minimum"_a=-DBL_MAX, "maximum"_a=DBL_MAX);
     cls_FloatNode.def("value", &FloatNode::value);
     cls_FloatNode.def("precision", &FloatNode::precision);
     cls_FloatNode.def("minimum", &FloatNode::minimum);
@@ -486,26 +499,29 @@ PYBIND11_MODULE(libe57, m) {
         return arr;
     });
 
-    py::class_<ImageFile> cls_ImageFile(m, "ImageFile");
-    cls_ImageFile.def(py::init<const std::string &, const std::string &, int>(), "fname"_a, "mode"_a, "checksumPolicy"_a=CHECKSUM_POLICY_ALL);
-    cls_ImageFile.def("root", &ImageFile::root);
-    cls_ImageFile.def("close", &ImageFile::close);
-    cls_ImageFile.def("cancel", &ImageFile::cancel);
-    cls_ImageFile.def("isOpen", &ImageFile::isOpen);
-    cls_ImageFile.def("isWritable", &ImageFile::isWritable);
-    cls_ImageFile.def("fileName", &ImageFile::fileName);
-    cls_ImageFile.def("writerCount", &ImageFile::writerCount);
-    cls_ImageFile.def("readerCount", &ImageFile::readerCount);
-    cls_ImageFile.def("extensionsAdd", &ImageFile::extensionsAdd, "prefix"_a, "uri"_a);
-    cls_ImageFile.def("extensionsLookupPrefix", &ImageFile::extensionsLookupPrefix, "prefix"_a, "uri"_a);
-    cls_ImageFile.def("extensionsLookupUri", &ImageFile::extensionsLookupUri, "uri"_a, "prefix"_a);
-    cls_ImageFile.def("extensionsCount", &ImageFile::extensionsCount);
-    cls_ImageFile.def("extensionsPrefix", &ImageFile::extensionsPrefix, "index"_a);
-    cls_ImageFile.def("extensionsUri", &ImageFile::extensionsUri, "index"_a);
-    cls_ImageFile.def("isElementNameExtended", &ImageFile::isElementNameExtended, "elementName"_a);
-    cls_ImageFile.def("elementNameParse", &ImageFile::elementNameParse, "elementName"_a, "prefix"_a, "localPart"_a);
-    cls_ImageFile.def("checkInvariant", &ImageFile::checkInvariant, "doRecurse"_a=true);
-    cls_ImageFile.def("__repr__", [](const ImageFile &im) {
+    py::class_<ImageFile> (m, "ImageFile")
+    .def(py::init<const std::string &, const std::string &, int>(), "fname"_a, "mode"_a, "checksumPolicy"_a=CHECKSUM_POLICY_ALL)
+    .def("root", &ImageFile::root)
+    .def("close", &ImageFile::close)
+    .def("cancel", &ImageFile::cancel)
+    .def("isOpen", &ImageFile::isOpen)
+    .def("isWritable", &ImageFile::isWritable)
+    .def("fileName", &ImageFile::fileName)
+    .def("writerCount", &ImageFile::writerCount)
+    .def("readerCount", &ImageFile::readerCount)
+    .def("extensionsAdd", &ImageFile::extensionsAdd, "prefix"_a, "uri"_a)
+// I couldn't wrap the overloaded function so I call it directly
+    .def("extensionsLookupPrefix",  [](const ImageFile &im, std::string &prefix, std::string &uri) {
+        return im.extensionsLookupPrefix(prefix, uri);
+    }, "prefix"_a, "uri"_a)
+    .def("extensionsLookupUri", &ImageFile::extensionsLookupUri, "uri"_a, "prefix"_a)
+    .def("extensionsCount", &ImageFile::extensionsCount)
+    .def("extensionsPrefix", &ImageFile::extensionsPrefix, "index"_a)
+    .def("extensionsUri", &ImageFile::extensionsUri, "index"_a)
+    .def("isElementNameExtended", &ImageFile::isElementNameExtended, "elementName"_a)
+    .def("elementNameParse", &ImageFile::elementNameParse, "elementName"_a, "prefix"_a, "localPart"_a)
+    .def("checkInvariant", &ImageFile::checkInvariant, "doRecurse"_a=true)
+    .def("__repr__", [](const ImageFile &im) {
         return "<ImageFile '" + im.fileName() + "'>";
     });
 
