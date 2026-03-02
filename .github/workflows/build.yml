@@ -164,7 +164,7 @@ jobs:
           CIBW_SKIP: "cp3??t-macos*"
           CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10, <3.15"
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: wheels-${{ matrix.os }}
           path: wheelhouse/*.whl
@@ -184,7 +184,7 @@ jobs:
       - name: Build SDist
         run: pipx run build --sdist
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: sdist
           path: dist/*.tar.gz
