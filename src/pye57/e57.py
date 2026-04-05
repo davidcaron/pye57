@@ -350,8 +350,10 @@ class E57:
                 bb_min_scaled = np.array([scan_header.rangeMinimum, scan_header.azimuthStart, scan_header.elevationMinimum])
                 bb_max_scaled = np.array([scan_header.rangeMaximum, scan_header.azimuthEnd, scan_header.elevationMaximum])
             else:
-                bb_min_scaled = self.to_global(bb_min.reshape(-1, 3), rotation, translation)[0]
-                bb_max_scaled = self.to_global(bb_max.reshape(-1, 3), rotation, translation)[0]
+                # bb_min_scaled = self.to_global(bb_min.reshape(-1, 3), rotation, translation)[0]
+                # bb_max_scaled = self.to_global(bb_max.reshape(-1, 3), rotation, translation)[0]
+                bb_min_scaled  =  bb_min
+                bb_max_scaled  =  bb_max
 
             bbox_node.set("rangeMinimum", libe57.FloatNode(self.image_file, bb_min_scaled[0]))
             bbox_node.set("rangeMaximum", libe57.FloatNode(self.image_file, bb_max_scaled[0]))
@@ -359,7 +361,7 @@ class E57:
             bbox_node.set("azimuthEnd", libe57.FloatNode(self.image_file, bb_max_scaled[1]))
             bbox_node.set("elevationMinimum", libe57.FloatNode(self.image_file, bb_min_scaled[2]))
             bbox_node.set("elevationMaximum", libe57.FloatNode(self.image_file, bb_max_scaled[2]))
-            scan_node.set("SphericalBounds", bbox_node)
+            scan_node.set("sphericalBounds", bbox_node)
         else:
             raise ValueError(f"Unsupported coordinate system: {coordinate_system_name}")
 

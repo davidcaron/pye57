@@ -341,6 +341,18 @@ def test_write_spherical(e57_spherical_path, temp_e57_write):
     e57_write.write_scan_raw(data)
     e57_write.close()
 
+    e57_read = pye57.E57(temp_e57_write, mode="r")
+    header = e57_read.get_header(0)
+    assert "sphericalRange" in header.point_fields
+    assert "sphericalAzimuth" in header.point_fields
+    assert "sphericalElevation" in header.point_fields
+
+    data_read = e57_read.read_scan_raw(0)
+    assert np.allclose(data["sphericalRange"], data_read["sphericalRange"], equal_nan=True)
+    assert np.allclose(data["sphericalAzimuth"], data_read["sphericalAzimuth"], equal_nan=True)
+    assert np.allclose(data["sphericalElevation"], data_read["sphericalElevation"], equal_nan=True)
+    assert np.array_equal(data["sphericalInvalidState"], data_read["sphericalInvalidState"])
+
 
 def test_translation_without_rotation(e57_translation_without_rotation_path):
     import numpy as np
