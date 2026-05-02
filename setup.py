@@ -30,8 +30,14 @@ extra_link_args = []
 if platform.system() == "Windows":
     libraries.append("xerces-c_3")
 
-    # using conda
-    conda_library_dir = Path(sys.executable).parent / "Library"
+    # using conda — prefer CONDA_PREFIX since `pip install .` without
+    # `--no-build-isolation` puts sys.executable in pip's overlay venv,
+    # not the conda env that actually has xerces-c installed.
+    conda_prefix = os.environ.get("CONDA_PREFIX")
+    if conda_prefix:
+        conda_library_dir = Path(conda_prefix) / "Library"
+    else:
+        conda_library_dir = Path(sys.executable).parent / "Library"
     if conda_library_dir.exists():
         library_dirs.append(str(conda_library_dir / "lib"))
         include_dirs.append(str(conda_library_dir / "include"))
