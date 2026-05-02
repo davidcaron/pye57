@@ -38,6 +38,14 @@ jobs:
   build-and-test-windows:
     name: Windows (python ${{ matrix.python-version }})
     runs-on: windows-2022
+    # `pwsh -l` is a login shell, which runs the profile that
+    # `conda-incubator/setup-miniconda` installs to auto-activate the `pye57`
+    # env. Without `-l`, conda activation is skipped and `python`/`pip` resolve
+    # to the hosted-tool Python instead of conda's, so xerces-c headers from
+    # `<conda>/Library/include` never reach cl.exe.
+    defaults:
+      run:
+        shell: pwsh -l {0}
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
@@ -57,23 +65,23 @@ jobs:
           miniconda-version: "latest"
 
       - name: Install Dependencies
-        shell: pwsh
         run: |
           conda install -y xerces-c
+          pip install numpy pybind11 setuptools wheel pyquaternion
 
       - name: Configure MSVC console
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Install package
-        shell: pwsh
-        run: pip install .
+        # `--no-build-isolation` keeps the build inside the conda env so
+        # `sys.executable` (used by setup.py to locate `<conda>/Library`)
+        # points at conda's python, not pip's overlay venv.
+        run: pip install . --no-build-isolation -v
 
       - name: Install pytest
-        shell: pwsh
         run: pip install pytest
 
       - name: Run tests
-        shell: pwsh
         run: python -m pytest tests
 
   build-and-test-macos:
