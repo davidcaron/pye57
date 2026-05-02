@@ -64,6 +64,12 @@ jobs:
       - name: Configure MSVC console
         uses: ilammy/msvc-dev-cmd@v1
 
+      - name: Expose conda Library paths to MSVC
+        shell: pwsh
+        run: |
+          echo "INCLUDE=$env:CONDA_PREFIX\Library\include;$env:INCLUDE" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "LIB=$env:CONDA_PREFIX\Library\lib;$env:LIB" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       - name: Install package
         shell: pwsh
         run: pip install .
