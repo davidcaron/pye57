@@ -65,7 +65,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          conda install -y xerces-c
+          conda install -y xerces-c pip
           python -m pip install numpy pybind11 setuptools wheel
 
       - name: Configure MSVC console
