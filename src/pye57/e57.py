@@ -9,6 +9,8 @@ from pyquaternion import Quaternion
 from pye57.__version__ import __version__
 from pye57 import libe57
 from pye57 import ScanHeader
+from pye57 import ScanRawReader
+from pye57 import ScanReader
 from pye57.utils import convert_spherical_to_cartesian
 
 try:
@@ -160,6 +162,24 @@ class E57:
 
         return data
 
+    def open_scan_raw(self, index, points_per_chunk, ignore_unsupported_fields=False) -> ScanRawReader:
+        """Open a scan for chunked reading of raw point data.
+
+        Returns a context-managed reader that yields one chunk at a time. Each chunk
+        is a dict mapping field name (e.g. "cartesianX") to a 1-D numpy array; all
+        arrays in a given chunk have the same length, up to `points_per_chunk`.
+        Concatenated, the chunks are equivalent to `read_scan_raw(index)`.
+
+        Use `pye57.concatenate_chunks(chunks)` to assemble a list of chunks into a
+        single dict-of-arrays.
+        """
+        return ScanRawReader(
+            self.data3d[index],
+            self.image_file,
+            points_per_chunk,
+            ignore_unsupported_fields,
+        )
+
     def scan_position(self, index):
         pt = np.array([[0, 0, 0]])
         header = self.get_header(index)
@@ -232,6 +252,38 @@ class E57:
             data["cartesianY"] = xyz[:, 1]
             data["cartesianZ"] = xyz[:, 2]
         return data
+
+    def open_scan(self,
+                  index,
+                  points_per_chunk,
+                  *,
+                  intensity=False,
+                  colors=False,
+                  row_column=False,
+                  transform=True,
+                  ignore_missing_fields=False) -> ScanReader:
+        """Open a scan for chunked reading of transformed point data.
+
+        Mirrors the semantics of `read_scan` (validState filtering, optional
+        spherical-to-cartesian conversion, optional pose transform), but yields
+        one chunk at a time. Each chunk is a dict mapping field name to a 1-D
+        numpy array; all arrays in a given chunk have the same length, which is
+        at most `points_per_chunk` and may be smaller because invalid points are
+        filtered out per chunk.
+
+        Use `pye57.concatenate_chunks(chunks)` to assemble a list of chunks into a
+        single dict-of-arrays equivalent to `read_scan(index, ...)`.
+        """
+        return ScanReader(
+            self.data3d[index],
+            self.image_file,
+            points_per_chunk,
+            intensity=intensity,
+            colors=colors,
+            row_column=row_column,
+            transform=transform,
+            ignore_missing_fields=ignore_missing_fields,
+        )
 
     def write_scan_raw(self, data: Dict, *, name=None, rotation=None, translation=None, scan_header=None):
         for field in data.keys():
