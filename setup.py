@@ -5,10 +5,16 @@ import sys
 from pathlib import Path
 
 # Available at setup time due to pyproject.toml
-from pybind11.setup_helpers import Pybind11Extension, build_ext
+from pybind11.setup_helpers import ParallelCompile, Pybind11Extension, build_ext
 from setuptools import setup
 
 HERE = Path(__file__).parent
+
+# Enable parallel build (`default=0` uses all cores by default),
+# configurable/disableable with `MAX_JOBS` env var
+# (as of writing there's no standardised name for that var, see
+# https://github.com/pybind/pybind11/discussions/6057).
+ParallelCompile("MAX_JOBS", default=0).install()
 
 about = {}
 with open(HERE / "src" / "pye57" / "__version__.py") as f:
