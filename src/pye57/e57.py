@@ -9,8 +9,7 @@ from pyquaternion import Quaternion
 from pye57.__version__ import __version__
 from pye57 import libe57
 from pye57 import ScanHeader
-from pye57 import ScanRawReader
-from pye57 import ScanReader
+from pye57.scan_reader import ScanRawReader, ScanReader
 from pye57.utils import convert_spherical_to_cartesian
 
 try:
