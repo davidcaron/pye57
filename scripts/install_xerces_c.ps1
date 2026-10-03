@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 
 $XERCES_MAJOR = 3
 $XERCES_MINOR = 2
-$XERCES_PATCH = 3
+$XERCES_PATCH = 5
 
 $XERCES_VERSION = "$XERCES_MAJOR.$XERCES_MINOR.$XERCES_PATCH"
 $XSD_BUILD_AREA = "$env:TEMP/build_xerces_c"
