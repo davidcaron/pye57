@@ -158,6 +158,9 @@ jobs:
           python -m cibuildwheel --platform windows --output-dir wheelhouse
         env:
           CIBW_BEFORE_ALL_WINDOWS: "powershell scripts/install_xerces_c.ps1"
+          # cibuildwheel 4.0 runs delvewheel by default on Windows, which can't find the
+          # xerces-c DLL; setup.py already bundles it into the wheel, so skip the repair.
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: ""
           CIBW_BUILD: "cp*-win_amd64*"
           CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10, <3.15"
 
