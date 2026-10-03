@@ -68,9 +68,6 @@ jobs:
           conda install -y xerces-c pip
           python -m pip install numpy pybind11 setuptools wheel
 
-      - name: Configure MSVC console
-        uses: ilammy/msvc-dev-cmd@v1
-
       - name: Install package
         # `--no-build-isolation` keeps the build inside the conda env so
         # `sys.executable` (used by setup.py to locate `<conda>/Library`)
