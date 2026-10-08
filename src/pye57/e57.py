@@ -9,7 +9,7 @@ from pyquaternion import Quaternion
 from pye57.__version__ import __version__
 from pye57 import libe57
 from pye57 import ScanHeader
-from pye57.utils import convert_spherical_to_cartesian
+from pye57.scan_reader import ScanRawReader, ScanReader, _read_all_chunks
 
 try:
     from exceptions import WindowsError
@@ -46,6 +46,15 @@ SUPPORTED_POINT_FIELDS = {
     "cartesianInvalidState": "b",
     "sphericalInvalidState": "b",
 }
+
+# libE57Format corrupts a buffered read whose capacity is 2**32 or more points
+# (https://github.com/davidcaron/pye57/issues/126), so read_scan and read_scan_raw
+# read through a buffer of at most this many points and copy each chunk into place.
+FULL_READ_CHUNK_SIZE = 2**20
+
+
+def _full_read_chunk_size(point_count):
+    return max(1, min(point_count, FULL_READ_CHUNK_SIZE))
 
 
 class E57:
@@ -137,28 +146,27 @@ class E57:
         return data, buffers
 
     def read_scan_raw(self, index, ignore_unsupported_fields=False) -> Dict:
-        header = self.get_header(index)
-        supported_point_fields = []
-        unsupported_point_fields = []
-        for field in header.point_fields:
-            if field in SUPPORTED_POINT_FIELDS:
-                supported_point_fields.append(field)
-            else:
-                unsupported_point_fields.append(field)
-        if unsupported_point_fields != [] and not ignore_unsupported_fields:
-            raise ValueError("Unsupported point fields: %s.\n"
-                            "Consider using 'ignore_unsupported_fields' to skip them." % unsupported_point_fields)
-        # could it call make_buffers instead, it looks like the code's identical
-        data = {}
-        buffers = libe57.VectorSourceDestBuffer()
-        for field in supported_point_fields:
-            np_array, buffer = self.make_buffer(field, header.point_count)
-            data[field] = np_array
-            buffers.append(buffer)
+        point_count = self.get_header(index).point_count
+        reader = self.open_scan_raw(index, _full_read_chunk_size(point_count), ignore_unsupported_fields)
+        return _read_all_chunks(reader, point_count)
 
-        header.points.reader(buffers).read()
+    def open_scan_raw(self, index, points_per_chunk, ignore_unsupported_fields=False) -> ScanRawReader:
+        """Open a scan for chunked reading of raw point data.
 
-        return data
+        Returns a context-managed reader that yields one chunk at a time. Each chunk
+        is a dict mapping field name (e.g. "cartesianX") to a 1-D numpy array; all
+        arrays in a given chunk have the same length, up to `points_per_chunk`.
+        Concatenated, the chunks are equivalent to `read_scan_raw(index)`.
+
+        Use `pye57.concatenate_chunks(chunks)` to assemble a list of chunks into a
+        single dict-of-arrays.
+        """
+        return ScanRawReader(
+            self.data3d[index],
+            self.image_file,
+            points_per_chunk,
+            ignore_unsupported_fields,
+        )
 
     def scan_position(self, index):
         pt = np.array([[0, 0, 0]])
@@ -178,60 +186,47 @@ class E57:
                   row_column=False,
                   transform=True,
                   ignore_missing_fields=False) -> Dict:
-        header = self.get_header(index)
-        n_points = header.point_count
+        point_count = self.get_header(index).point_count
+        reader = self.open_scan(index,
+                                _full_read_chunk_size(point_count),
+                                intensity=intensity,
+                                colors=colors,
+                                row_column=row_column,
+                                transform=transform,
+                                ignore_missing_fields=ignore_missing_fields)
+        return _read_all_chunks(reader, point_count)
 
-        coordinate_system = header.get_coordinate_system(COORDINATE_SYSTEMS)
-        if coordinate_system is COORDINATE_SYSTEMS.CARTESIAN:
-            validState = "cartesianInvalidState"
-            fields = list(SUPPORTED_CARTESIAN_POINT_FIELDS.keys())
-        elif coordinate_system is COORDINATE_SYSTEMS.SPHERICAL: 
-            validState = "sphericalInvalidState"
-            fields = list(SUPPORTED_SPHERICAL_POINT_FIELDS.keys())
-        if intensity:
-            fields.append("intensity")
-        if colors:
-            fields.append("colorRed")
-            fields.append("colorGreen")
-            fields.append("colorBlue")
-        if row_column:
-            fields.append("rowIndex")
-            fields.append("columnIndex")
-        fields.append(validState)
+    def open_scan(self,
+                  index,
+                  points_per_chunk,
+                  *,
+                  intensity=False,
+                  colors=False,
+                  row_column=False,
+                  transform=True,
+                  ignore_missing_fields=False) -> ScanReader:
+        """Open a scan for chunked reading of transformed point data.
 
-        for field in fields[:]:
-            if field not in header.point_fields:
-                if ignore_missing_fields:
-                    fields.remove(field)
-                else:
-                    raise ValueError("Requested to read a field (%s) with is absent from the e57 file. "
-                                     "Consider using 'ignore_missing_fields' to skip it." % field)
+        Mirrors the semantics of `read_scan` (validState filtering, optional
+        spherical-to-cartesian conversion, optional pose transform), but yields
+        one chunk at a time. Each chunk is a dict mapping field name to a 1-D
+        numpy array; all arrays in a given chunk have the same length, which is
+        at most `points_per_chunk` and may be smaller because invalid points are
+        filtered out per chunk.
 
-        data, buffers = self.make_buffers(fields, n_points)
-        header.points.reader(buffers).read()
-
-        if validState in data:
-            valid = ~data[validState].astype("?")
-
-            for field in data:
-                data[field] = data[field][valid]
-
-            del data[validState]
-
-        if transform:
-            if coordinate_system is COORDINATE_SYSTEMS.CARTESIAN:
-                xyz = np.array([data["cartesianX"], data["cartesianY"], data["cartesianZ"]]).T
-            elif coordinate_system is COORDINATE_SYSTEMS.SPHERICAL:
-                rae = np.array([data["sphericalRange"], data["sphericalAzimuth"], data["sphericalElevation"]]).T
-                # rae to xyz
-                xyz = convert_spherical_to_cartesian(rae)
-            # translation to global coordinates
-            if header.has_pose():
-                xyz = self.to_global(xyz, header.rotation, header.translation)
-            data["cartesianX"] = xyz[:, 0]
-            data["cartesianY"] = xyz[:, 1]
-            data["cartesianZ"] = xyz[:, 2]
-        return data
+        Use `pye57.concatenate_chunks(chunks)` to assemble a list of chunks into a
+        single dict-of-arrays equivalent to `read_scan(index, ...)`.
+        """
+        return ScanReader(
+            self.data3d[index],
+            self.image_file,
+            points_per_chunk,
+            intensity=intensity,
+            colors=colors,
+            row_column=row_column,
+            transform=transform,
+            ignore_missing_fields=ignore_missing_fields,
+        )
 
     def write_scan_raw(self, data: Dict, *, name=None, rotation=None, translation=None, scan_header=None):
         for field in data.keys():
