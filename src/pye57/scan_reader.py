@@ -23,6 +23,7 @@ class ScanRawReader:
         ignore_unsupported_fields: bool = False,
         fields: Optional[List[str]] = None,
     ):
+        _check_points_per_chunk(points_per_chunk)
         self._scan_node = scan_node
         self._image_file = image_file
         self._points_per_chunk = points_per_chunk
@@ -37,6 +38,13 @@ class ScanRawReader:
 
     def read(self) -> Optional[Dict]:
         """Read the next chunk of points, or return None when the scan is exhausted."""
+        chunk = self._next_chunk()
+        if chunk is None:
+            return None
+        return {field: arr.copy() for field, arr in chunk.items()}
+
+    def _next_chunk(self) -> Optional[Dict]:
+        # Returns views into the reader's buffers, which the next read overwrites.
         if self._closed:
             raise ValueError("read() called on a closed ScanRawReader")
         if self._reader is None:
@@ -45,7 +53,7 @@ class ScanRawReader:
         if n == 0:
             self.close()
             return None
-        return {field: arr[:n].copy() for field, arr in self._data.items()}
+        return {field: arr[:n] for field, arr in self._data.items()}
 
     def _open_reader(self):
         from pye57.e57 import SUPPORTED_POINT_FIELDS
@@ -130,8 +138,7 @@ class ScanReader:
             SUPPORTED_SPHERICAL_POINT_FIELDS,
         )
 
-        # A lot of this logic is duplicated from the original read_scan() method in e57.py.
-        # Could be consolidated later - kept duplicated for now to reduce PR footprint
+        _check_points_per_chunk(points_per_chunk)
         header = ScanHeader(scan_node)
         coordinate_system = header.get_coordinate_system(COORDINATE_SYSTEMS)
         if coordinate_system is COORDINATE_SYSTEMS.CARTESIAN:
@@ -159,7 +166,7 @@ class ScanReader:
                     fields.remove(field)
                 else:
                     raise ValueError(
-                        "Requested to read a field (%s) with is absent from the e57 file. "
+                        "Requested to read a field (%s) which is absent from the e57 file. "
                         "Consider using 'ignore_missing_fields' to skip it." % field
                     )
 
@@ -180,15 +187,16 @@ class ScanReader:
 
     def read(self) -> Optional[Dict]:
         """Read the next chunk of points, or return None when the scan is exhausted."""
-        data = self._raw.read()
+        data = self._raw._next_chunk()
         if data is None:
             return None
 
+        # Both branches copy out of the raw reader's buffers, which the next read reuses.
         if self._valid_field is not None:
-            valid = ~data[self._valid_field].astype("?")
-            for field in data:
-                data[field] = data[field][valid]
-            del data[self._valid_field]
+            valid = ~data.pop(self._valid_field).astype("?")
+            data = {field: arr[valid] for field, arr in data.items()}
+        else:
+            data = {field: arr.copy() for field, arr in data.items()}
 
         if self._transform:
             if self._is_spherical:
@@ -211,6 +219,9 @@ class ScanReader:
             data["cartesianZ"] = xyz[:, 2]
 
         return data
+
+    # Chunks from read() are already independent of the reader's buffers.
+    _next_chunk = read
 
     def close(self) -> None:
         self._raw.close()
@@ -241,3 +252,40 @@ def concatenate_chunks(chunks: List[Dict]) -> Dict:
     if not chunks:
         return {}
     return {field: np.concatenate([c[field] for c in chunks]) for field in chunks[0]}
+
+
+def _read_all_chunks(reader, point_count: int) -> Dict:
+    """Read every chunk from `reader` into one array per field, then close it.
+
+    The arrays are allocated once for `point_count` points and each chunk is copied
+    straight into place, so peak memory is the result plus a single chunk. If fewer
+    points come back (invalid points filtered out by `ScanReader`), the arrays are
+    trimmed to the number actually read.
+    """
+    data = {}
+    offset = 0
+    with reader:
+        while True:
+            chunk = reader._next_chunk()
+            if chunk is None:
+                break
+            n = 0
+            for field, arr in chunk.items():
+                if field not in data:
+                    data[field] = np.empty(point_count, arr.dtype)
+                n = len(arr)
+                data[field][offset:offset + n] = arr
+            offset += n
+    if offset < point_count:
+        for field in data:
+            data[field] = data[field][:offset].copy()
+    return data
+
+
+def _check_points_per_chunk(points_per_chunk) -> None:
+    if (
+        not isinstance(points_per_chunk, (int, np.integer))
+        or isinstance(points_per_chunk, bool)
+        or points_per_chunk < 1
+    ):
+        raise ValueError("points_per_chunk must be a positive integer, got %r" % (points_per_chunk,))

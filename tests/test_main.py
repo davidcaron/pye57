@@ -262,32 +262,70 @@ def test_open_scan_matches_read_scan(e57_path):
     e57 = pye57.E57(e57_path)
     expected = e57.read_scan(0, intensity=True, row_column=True)
 
-    chunks = []
     with e57.open_scan(0, points_per_chunk=1000, intensity=True, row_column=True) as reader:
-        for chunk in reader:
-            chunks.append(chunk)
+        chunks = list(reader)
 
     assert len(chunks) > 1
-    combined = {f: np.concatenate([c[f] for c in chunks]) for f in expected}
+    combined = pye57.concatenate_chunks(chunks)
     assert sorted(combined.keys()) == sorted(expected.keys())
     for field in expected:
-        np.testing.assert_allclose(combined[field], expected[field])
+        if np.issubdtype(expected[field].dtype, np.floating):
+            np.testing.assert_allclose(combined[field], expected[field])
+        else:
+            np.testing.assert_array_equal(combined[field], expected[field])
 
 
 def test_open_scan_raw_matches_read_scan_raw(e57_path):
     e57 = pye57.E57(e57_path)
     expected = e57.read_scan_raw(0)
 
-    chunks = []
     with e57.open_scan_raw(0, points_per_chunk=1000) as reader:
-        for chunk in reader:
-            chunks.append(chunk)
+        chunks = list(reader)
 
     assert len(chunks) > 1, "expected multiple chunks given points_per_chunk=1000"
-    combined = {field: np.concatenate([c[field] for c in chunks]) for field in expected}
+    combined = pye57.concatenate_chunks(chunks)
     assert sorted(combined.keys()) == sorted(expected.keys())
     for field in expected:
         np.testing.assert_array_equal(combined[field], expected[field])
+
+
+@pytest.mark.parametrize("path_fixture", ["e57_path", "e57_spherical_path"])
+def test_full_read_in_several_chunks(path_fixture, request, monkeypatch):
+    # read_scan and read_scan_raw never ask libE57Format for one buffer holding the whole scan,
+    # because buffers of 2**32 points or more come back corrupted (issue #126).
+    # Shrink the limit so the test file takes several chunks, and check nothing changes.
+    e57 = pye57.E57(request.getfixturevalue(path_fixture))
+    expected_raw = e57.read_scan_raw(0)
+    expected = e57.read_scan(0, intensity=True, row_column=True, ignore_missing_fields=True)
+    assert e57.get_header(0).point_count <= pye57.e57.FULL_READ_CHUNK_SIZE  # read in one chunk
+
+    monkeypatch.setattr(pye57.e57, "FULL_READ_CHUNK_SIZE", 1000)
+    reads = []
+    next_chunk = pye57.ScanRawReader._next_chunk
+
+    def counting_next_chunk(self):
+        reads.append(1)
+        return next_chunk(self)
+
+    monkeypatch.setattr(pye57.ScanRawReader, "_next_chunk", counting_next_chunk)
+    chunked_raw = e57.read_scan_raw(0)
+    assert len(reads) > 2
+    chunked = e57.read_scan(0, intensity=True, row_column=True, ignore_missing_fields=True)
+
+    for full, chunked_data in [(expected_raw, chunked_raw), (expected, chunked)]:
+        assert list(chunked_data.keys()) == list(full.keys())
+        for field in full:
+            assert chunked_data[field].dtype == full[field].dtype
+            np.testing.assert_array_equal(chunked_data[field], full[field])
+
+
+@pytest.mark.parametrize("points_per_chunk", [0, -1, 1.5, "1000", None, True])
+def test_points_per_chunk_must_be_positive_int(e57_path, points_per_chunk):
+    e57 = pye57.E57(e57_path)
+    with pytest.raises(ValueError, match="points_per_chunk"):
+        e57.open_scan_raw(0, points_per_chunk=points_per_chunk)
+    with pytest.raises(ValueError, match="points_per_chunk"):
+        e57.open_scan(0, points_per_chunk=points_per_chunk)
 
 
 def test_read_write_single_scan(e57_path, temp_e57_write):
