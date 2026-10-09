@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
 
     steps:
       - uses: actions/checkout@v6
@@ -47,7 +47,7 @@ jobs:
         shell: pwsh -l {0}
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
 
     steps:
       - uses: actions/checkout@v6
@@ -68,9 +68,6 @@ jobs:
           conda install -y xerces-c pip
           python -m pip install numpy pybind11 setuptools wheel
 
-      - name: Configure MSVC console
-        uses: ilammy/msvc-dev-cmd@v1
-
       - name: Install package
         # `--no-build-isolation` keeps the build inside the conda env so
         # `sys.executable` (used by setup.py to locate `<conda>/Library`)
@@ -88,7 +85,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
 
     steps:
       - uses: actions/checkout@v6
@@ -150,7 +147,7 @@ jobs:
           CIBW_BEFORE_ALL_LINUX: "bash scripts/install_xerces_c.sh"
           CIBW_BUILD: "cp*-manylinux_x86_64"
           CIBW_SKIP: "cp3??t-manylinux*"
-          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10, <3.15"
+          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10, <3.16"
 
       - name: Build wheels (Windows)
         if: matrix.os == 'windows-2022'
@@ -158,8 +155,11 @@ jobs:
           python -m cibuildwheel --platform windows --output-dir wheelhouse
         env:
           CIBW_BEFORE_ALL_WINDOWS: "powershell scripts/install_xerces_c.ps1"
+          # cibuildwheel 4.0 runs delvewheel by default on Windows, which can't find the
+          # xerces-c DLL; setup.py already bundles it into the wheel, so skip the repair.
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: ""
           CIBW_BUILD: "cp*-win_amd64*"
-          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10, <3.15"
+          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10, <3.16"
 
       - name: Build wheels (macOS)
         if: matrix.os == 'macos-latest'
@@ -169,7 +169,7 @@ jobs:
           CIBW_BEFORE_ALL_MACOS: "bash scripts/install_xerces_c.sh"
           CIBW_BUILD: "cp*-macosx*"
           CIBW_SKIP: "cp3??t-macos*"
-          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10, <3.15"
+          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.10, <3.16"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -203,7 +203,7 @@ jobs:
     strategy:
       matrix:
         os: [ "ubuntu-latest", "windows-2022", "macos-latest" ]
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
     steps:
       - uses: actions/checkout@v6
         with:
