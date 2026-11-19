@@ -3,10 +3,16 @@
 #include <pybind11/stl_bind.h>
 #include <pybind11/numpy.h>
 
+#ifdef PYE57_USE_SYSTEM_LIBE57FORMAT
+// An installed libE57Format puts its public headers in an E57Format/ subdirectory
+#include <E57Format/E57Exception.h>
+#include <E57Format/E57Format.h>
+#include <E57Format/E57Version.h>
+#else
 #include <E57Exception.h>
 #include <E57Format.h>
 #include <E57Version.h>
-#include <ASTMVersion.h>
+#endif
 #include <sstream>
 #include <string.h>
 
@@ -52,8 +58,9 @@ PYBIND11_MODULE(libe57, m) {
         }
     });
 
-    m.attr("E57_FORMAT_MAJOR") = E57_FORMAT_MAJOR;
-    m.attr("E57_FORMAT_MINOR") = E57_FORMAT_MINOR;
+    // Public API; ASTMVersion.h is a private header that is not installed
+    m.attr("E57_FORMAT_MAJOR") = Version::astmMajor();
+    m.attr("E57_FORMAT_MINOR") = Version::astmMinor();
     m.attr("E57_LIBRARY_ID") = REVISION_ID;
     m.attr("E57_V1_0_URI") = "http://www.astm.org/COMMIT/E57/2010-e57-v1.0";
     m.attr("CHECKSUM_POLICY_NONE") = CHECKSUM_POLICY_NONE;

@@ -15,20 +15,39 @@ with open(HERE / "src" / "pye57" / "__version__.py") as f:
     exec(f.read(), about)
 version = about["__version__"]
 
-libE57_cpp = sorted(map(str, (HERE / "libE57Format" / "src").glob("*.cpp")))
+# Set PYE57_USE_SYSTEM_LIBE57FORMAT=1 to link against an installed libE57Format
+# shared library (e.g. from conda-forge or a distro package) instead of compiling
+# the vendored libE57Format submodule. The installed headers and library must be
+# discoverable by the compiler and linker (e.g. via CPPFLAGS/LDFLAGS).
+use_system_libe57 = os.environ.get("PYE57_USE_SYSTEM_LIBE57FORMAT", "").lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
 
-libraries = []
 library_dirs = []
-include_dirs = [
-    "libE57Format/include",
-    "libE57Format/src",
-    "libE57Format/extern/CRCpp/inc",
-]
 package_data = []
 extra_link_args = []
 
+if use_system_libe57:
+    libE57_cpp = []
+    libraries = ["E57Format"]
+    include_dirs = []
+    define_macros = [("PYE57_USE_SYSTEM_LIBE57FORMAT", None)]
+else:
+    libE57_cpp = sorted(map(str, (HERE / "libE57Format" / "src").glob("*.cpp")))
+    libraries = []
+    include_dirs = [
+        "libE57Format/include",
+        "libE57Format/src",
+        "libE57Format/extern/CRCpp/inc",
+    ]
+    define_macros = [("E57_DLL", "")]
+
 if platform.system() == "Windows":
-    libraries.append("xerces-c_3")
+    if not use_system_libe57:
+        libraries.append("xerces-c_3")
 
     # using conda — prefer CONDA_PREFIX since `pip install .` without
     # `--no-build-isolation` puts sys.executable in pip's overlay venv,
@@ -44,12 +63,15 @@ if platform.system() == "Windows":
 
     # using cibuildwheel
     xerces_dir = Path(os.environ["TEMP"]) / "xerces_c"
-    if xerces_dir.exists():
+    if not use_system_libe57 and xerces_dir.exists():
         library_dirs.append(str(xerces_dir / "lib"))
         include_dirs.append(str(xerces_dir / "include"))
         # include xerces-c dll in the package
         shutil.copy2(xerces_dir / "bin" / "xerces-c_3_2.dll", HERE / "src" / "pye57")
         package_data.append("xerces-c_3_2.dll")
+elif use_system_libe57:
+    # xerces-c is a dependency of the installed libE57Format, not of pye57
+    pass
 elif platform.system() == "Darwin":
     xerces_dir = Path("/usr/local/")
     if xerces_dir.exists():
@@ -71,7 +93,7 @@ ext_modules = [
     Pybind11Extension(
         "pye57.libe57",
         ["src/pye57/libe57_wrapper.cpp"] + libE57_cpp,
-        define_macros=[("E57_DLL", "")],
+        define_macros=define_macros,
         include_dirs=include_dirs,
         libraries=libraries,
         library_dirs=library_dirs,
@@ -93,19 +115,26 @@ class BuildExt(build_ext):
         if ct == "unix":
             opts.append(f'-DVERSION_INFO="{version}"')
             opts.append(f'-DREVISION_ID="{revision_id}"')
-            opts.append("-DCRCPP_USE_CPP11")
-            opts.append("-DCRCPP_BRANCHLESS")
             opts.append("-Wno-unused-variable")
-            opts.append("-DE57_ENABLE_DIAGNOSTIC_OUTPUT")
+            if not use_system_libe57:
+                opts.append("-DCRCPP_USE_CPP11")
+                opts.append("-DCRCPP_BRANCHLESS")
+                opts.append("-DE57_ENABLE_DIAGNOSTIC_OUTPUT")
         elif ct == "msvc":
             opts.append(f'/DVERSION_INFO="{version}"')
             opts.append(rf'/DREVISION_ID="\"{revision_id}\""')
-            opts.append("/DCRCPP_USE_CPP11")
-            opts.append("/DCRCPP_BRANCHLESS")
-            opts.append("/DWINDOWS")
-            opts.append("/DE57_ENABLE_DIAGNOSTIC_OUTPUT")
+            if not use_system_libe57:
+                opts.append("/DCRCPP_USE_CPP11")
+                opts.append("/DCRCPP_BRANCHLESS")
+                opts.append("/DWINDOWS")
+                opts.append("/DE57_ENABLE_DIAGNOSTIC_OUTPUT")
         for ext in self.extensions:
             ext.extra_compile_args = opts
+
+        if use_system_libe57:
+            # The installed libE57Format ships its own generated E57Export.h
+            super().build_extensions()
+            return
 
         export_header_path.touch()
         try:

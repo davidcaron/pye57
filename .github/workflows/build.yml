@@ -115,6 +115,46 @@ jobs:
       - name: Run tests
         run: python -m pytest tests
 
+  build-and-test-system-libe57format:
+    name: System libE57Format (Ubuntu)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc g++ cmake ninja-build libxerces-c-dev
+
+      - name: Build and install libE57Format from the submodule
+        run: |
+          # an explicit prefix is needed: libE57Format otherwise installs into a versioned subdirectory
+          cmake -G Ninja -S libE57Format -B build-e57 -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DE57_BUILD_SHARED=ON -DE57_BUILD_TEST=OFF
+          cmake --build build-e57
+          sudo cmake --install build-e57
+          sudo ldconfig
+          # make sure the pye57 build can't fall back to the vendored sources
+          git submodule deinit -f libE57Format
+
+      - name: Install package
+        env:
+          PYE57_USE_SYSTEM_LIBE57FORMAT: "1"
+        run: pip install .
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run tests
+        run: python -m pytest tests
+
   build_wheels:
     name: Build wheels
     runs-on: ${{ matrix.os }}
