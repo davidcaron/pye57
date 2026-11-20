@@ -64,8 +64,9 @@ jobs:
             build: "{0}-manylinux_x86_64"
           - name: windows
             os: windows-2022
-            # Also builds the free-threaded variant where cibuildwheel enables it (3.14+).
-            build: "{0}-win_amd64 {0}t-win_amd64"
+            # The glob also picks up the free-threaded variant (cp314t, cp315t) where
+            # cibuildwheel enables it; an explicit "cp311t" selector is rejected.
+            build: "{0}*-win_amd64"
           - name: macos
             os: macos-latest
             build: "{0}-macosx_*"
