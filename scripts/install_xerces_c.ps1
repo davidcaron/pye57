@@ -18,7 +18,14 @@ Write-Host "Download Xerces-C..."
 Invoke-WebRequest -Uri "https://github.com/apache/xerces-c/archive/v${XERCES_VERSION}.tar.gz" -OutFile "xerces-c-${XERCES_VERSION}.tar.gz"
 
 Write-Host "Verify Xerces-C checksum..."
-$actual = (Get-FileHash -Algorithm SHA256 "xerces-c-${XERCES_VERSION}.tar.gz").Hash
+# Get-FileHash is not reliably resolvable when powershell.exe is launched by
+# cibuildwheel, so hash with .NET directly.
+$stream = [System.IO.File]::OpenRead((Join-Path $PWD.Path "xerces-c-${XERCES_VERSION}.tar.gz"))
+try {
+    $actual = [System.BitConverter]::ToString([System.Security.Cryptography.SHA256]::Create().ComputeHash($stream)).Replace("-", "")
+} finally {
+    $stream.Dispose()
+}
 if ($actual -ne $XERCES_SHA256) {
     throw "Xerces-C checksum mismatch: expected $XERCES_SHA256, got $actual"
 }
