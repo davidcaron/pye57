@@ -5,8 +5,12 @@ import sys
 from pathlib import Path
 
 # Available at setup time due to pyproject.toml
-from pybind11.setup_helpers import Pybind11Extension, build_ext
+from pybind11.setup_helpers import ParallelCompile, Pybind11Extension, build_ext
 from setuptools import setup
+
+# Compile the libE57Format sources in parallel (defaults to the CPU count;
+# override with NPY_NUM_BUILD_JOBS).
+ParallelCompile("NPY_NUM_BUILD_JOBS").install()
 
 HERE = Path(__file__).parent
 

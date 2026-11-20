@@ -25,6 +25,6 @@ Set-Location "build"
 cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_INSTALL_PREFIX="$INSTALL_PREFIX" ..
 
 Write-Host "Build Xerces-C..."
-cmake --build . --config Release --target install
+cmake --build . --config Release --target install --parallel
 
 Write-Host "Xerces-C installed to: $INSTALL_PREFIX"
