@@ -6,6 +6,8 @@ $XERCES_MINOR = 2
 $XERCES_PATCH = 5
 
 $XERCES_VERSION = "$XERCES_MAJOR.$XERCES_MINOR.$XERCES_PATCH"
+# SHA-256 of the GitHub tag archive below; update together with the version.
+$XERCES_SHA256 = "4042f6f11c9eba745dc0e5f8035d98b442097ee4efc69e4853410e4737a987f8"
 $XSD_BUILD_AREA = "$env:TEMP/build_xerces_c"
 $INSTALL_PREFIX = "$env:TEMP/xerces_c"
 
@@ -14,6 +16,12 @@ Set-Location $XSD_BUILD_AREA
 
 Write-Host "Download Xerces-C..."
 Invoke-WebRequest -Uri "https://github.com/apache/xerces-c/archive/v${XERCES_VERSION}.tar.gz" -OutFile "xerces-c-${XERCES_VERSION}.tar.gz"
+
+Write-Host "Verify Xerces-C checksum..."
+$actual = (Get-FileHash -Algorithm SHA256 "xerces-c-${XERCES_VERSION}.tar.gz").Hash
+if ($actual -ne $XERCES_SHA256) {
+    throw "Xerces-C checksum mismatch: expected $XERCES_SHA256, got $actual"
+}
 
 Write-Host "Extract Xerces-C..."
 tar xzf "xerces-c-${XERCES_VERSION}.tar.gz"
