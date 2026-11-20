@@ -9,6 +9,12 @@ XERCES_PATCH=5
 XERCES_VERSION=${XERCES_MAJOR}.${XERCES_MINOR}.${XERCES_PATCH}
 XSD_BUILD_AREA=/tmp/build_xerces_c
 
+if command -v nproc >/dev/null 2>&1; then
+    JOBS=$(nproc)
+else
+    JOBS=$(sysctl -n hw.ncpu)
+fi
+
 echo "Create Xerces-C build area..."
 mkdir -p ${XSD_BUILD_AREA}
 cd ${XSD_BUILD_AREA}
@@ -28,7 +34,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
     echo "Configure Xerces-C for macOS..."
     ./configure --prefix=/usr/local --enable-static
     echo "Build Xerces-C..."
-    make
+    make -j"${JOBS}"
     echo "Install Xerces-C..."
     sudo make install
 else
@@ -36,7 +42,7 @@ else
     ./reconf
     ./configure
     echo "Build Xerces-C..."
-    make
+    make -j"${JOBS}"
     echo "Install Xerces-C..."
     make install
 fi
