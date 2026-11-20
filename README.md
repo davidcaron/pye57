@@ -38,6 +38,17 @@ assert isinstance(data["columnIndex"], np.ndarray)
 # if you want to get everything as raw, untransformed data, use:
 data_raw = e57.read_scan_raw(0)
 
+# read a large scan in chunks - useful when the file is too large to load all at once,
+# or to filter/downsample as you go. Here we keep every 10th point:
+filtered_chunks = []
+with e57.open_scan_raw(0, points_per_chunk=1_000_000) as reader:
+    for chunk in reader:
+        downsampled = {}
+        for field, array in chunk.items():
+            downsampled[field] = array[::10]
+        filtered_chunks.append(downsampled)
+filtered_data_raw = pye57.concatenate_chunks(filtered_chunks)
+
 # writing is also possible, but only using raw data for now
 with pye57.E57("e57_file_write.e57", mode='w') as e57_write:
     e57_write.write_scan_raw(data_raw)
