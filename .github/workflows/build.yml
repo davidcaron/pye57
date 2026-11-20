@@ -1,22 +1,41 @@
 name: build
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # PR runs share a group per branch so a new push cancels the stale run.
+  # Everything else (master, tags) gets a unique group and is never cancelled.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
-  build-and-test-ubuntu:
-    name: Ubuntu (python ${{ matrix.python-version }})
+  # Plain `pip install .` against the distro's xerces-c, for oldest and newest
+  # supported Python. The platform wheels below are each built and tested
+  # (via `[tool.cibuildwheel] test-command`) by cibuildwheel.
+  source_build:
+    name: Source build (Ubuntu, python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
+        python-version: ["3.11", "3.15"]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Setup Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
@@ -27,246 +46,134 @@ jobs:
           sudo apt-get install -y gcc g++ libxerces-c-dev
 
       - name: Install package
-        run: pip install .
-
-      - name: Install pytest
-        run: pip install pytest
-
-      - name: Run tests
-        run: python -m pytest tests
-
-  build-and-test-windows:
-    name: Windows (python ${{ matrix.python-version }})
-    runs-on: windows-2022
-    # `pwsh -l` runs the profile installed by `conda-incubator/setup-miniconda`,
-    # which makes `python` resolve to the conda env. But `pip` still resolves to
-    # the hosted-tool Python on PATH, so all install commands use `python -m pip`
-    # to keep pip and python on the same interpreter.
-    defaults:
-      run:
-        shell: pwsh -l {0}
-    strategy:
-      matrix:
-        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
-
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: recursive
-
-      - name: Setup miniconda
-        uses: conda-incubator/setup-miniconda@v4
-        with:
-          auto-update-conda: true
-          python-version: ${{ matrix.python-version }}
-          activate-environment: pye57
-          channels: conda-forge,conda-forge/label/python_rc
-          miniconda-version: "latest"
-
-      - name: Install Dependencies
-        run: |
-          conda install -y xerces-c pip
-          python -m pip install numpy pybind11 setuptools wheel
-
-      - name: Install package
-        # `--no-build-isolation` keeps the build inside the conda env so
-        # `sys.executable` (used by setup.py to locate `<conda>/Library`)
-        # points at conda's python, not pip's overlay venv.
-        run: python -m pip install . --no-build-isolation -v
-
-      - name: Install pytest
-        run: python -m pip install pytest
-
-      - name: Run tests
-        run: python -m pytest tests
-
-  build-and-test-macos:
-    name: macOS (python ${{ matrix.python-version }})
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
-
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: recursive
-
-      - name: Setup Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: ${{ matrix.python-version }}
-          allow-prereleases: true
-
-      - name: Install build dependencies
-        working-directory: ./scripts
-        run: |
-          bash install_xerces_c.sh
-
-      - name: Install package
-        run: pip install .
-
-      - name: Install pytest
-        run: pip install pytest
+        run: python -m pip install . pytest
 
       - name: Run tests
         run: python -m pytest tests
 
   build_wheels:
-    name: Build wheels
-    runs-on: ${{ matrix.os }}
-    needs:
-      - build-and-test-ubuntu
-      - build-and-test-windows
-      - build-and-test-macos
+    name: Wheel (${{ matrix.platform.name }}, ${{ matrix.python }})
+    runs-on: ${{ matrix.platform.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "windows-2022", "macos-latest"]
+        python: [cp311, cp312, cp313, cp314, cp315]
+        platform:
+          - name: linux
+            os: ubuntu-latest
+            build: "{0}-manylinux_x86_64"
+          - name: windows
+            os: windows-2022
+            # Also builds the free-threaded variant where cibuildwheel enables it (3.14+).
+            build: "{0}-win_amd64 {0}t-win_amd64"
+          - name: macos
+            os: macos-latest
+            build: "{0}-macosx_*"
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           submodules: recursive
+          persist-credentials: false
 
-      - name: Setup Python
-        uses: actions/setup-python@v7
+      - name: Build and test wheels
+        uses: pypa/cibuildwheel@f9b966cfadf4109556cadc5bb39ddb72d0ce664e # v4.3.5
         with:
-          python-version: "3.14"
-          allow-prereleases: true
-
-      - name: Install cibuildwheel
-        run: |
-          python -m pip install -U pip
-          python -m pip install cibuildwheel
-
-      - name: Build wheels (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          python -m cibuildwheel --platform linux --output-dir wheelhouse
+          output-dir: wheelhouse
         env:
-          CIBW_BEFORE_ALL_LINUX: "bash scripts/install_xerces_c.sh"
-          CIBW_BUILD: "cp*-manylinux_x86_64"
-          CIBW_SKIP: "cp3??t-manylinux*"
+          CIBW_BUILD: ${{ format(matrix.platform.build, matrix.python) }}
           CIBW_PROJECT_REQUIRES_PYTHON: ">=3.11, <3.16"
-
-      - name: Build wheels (Windows)
-        if: matrix.os == 'windows-2022'
-        run: |
-          python -m cibuildwheel --platform windows --output-dir wheelhouse
-        env:
+          CIBW_BEFORE_ALL_LINUX: "bash scripts/install_xerces_c.sh"
+          CIBW_BEFORE_ALL_MACOS: "bash scripts/install_xerces_c.sh"
           CIBW_BEFORE_ALL_WINDOWS: "powershell scripts/install_xerces_c.ps1"
           # cibuildwheel 4.0 runs delvewheel by default on Windows, which can't find the
           # xerces-c DLL; setup.py already bundles it into the wheel, so skip the repair.
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: ""
-          CIBW_BUILD: "cp*-win_amd64*"
-          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.11, <3.16"
 
-      - name: Build wheels (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          python -m cibuildwheel --platform macos --output-dir wheelhouse
-        env:
-          CIBW_BEFORE_ALL_MACOS: "bash scripts/install_xerces_c.sh"
-          CIBW_BUILD: "cp*-macosx*"
-          CIBW_SKIP: "cp3??t-macos*"
-          CIBW_PROJECT_REQUIRES_PYTHON: ">=3.11, <3.16"
-
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: wheels-${{ matrix.os }}
+          name: wheels-${{ matrix.platform.name }}-${{ matrix.python }}
           path: wheelhouse/*.whl
+          if-no-files-found: error
 
-  make_sdist:
-    name: Make sdist
-    runs-on: ubuntu-latest
-    needs:
-      - build-and-test-ubuntu
-      - build-and-test-windows
-      - build-and-test-macos
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: recursive
-
-      - name: Build SDist
-        run: pipx run build --sdist
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: sdist
-          path: dist/*.tar.gz
-
-  test_built_wheels:
-    name: Test Built Wheels
-    runs-on: ${{ matrix.os }}
+  # Install each wheel on a fresh runner with no Xerces-C on the system, to prove
+  # the bundled library is actually picked up (cibuildwheel's own test runs on
+  # the build machine, where Xerces-C is installed system-wide).
+  test_wheels:
+    name: Clean-runner wheel test (${{ matrix.platform.name }}, python ${{ matrix.python-version }})
     needs: build_wheels
+    runs-on: ${{ matrix.platform.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ "ubuntu-latest", "windows-2022", "macos-latest" ]
-        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
+        python-version: ["3.11", "3.15"]
+        platform:
+          - { name: linux, os: ubuntu-latest }
+          - { name: windows, os: windows-2022 }
+          - { name: macos, os: macos-latest }
+
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
-          submodules: recursive
+          persist-credentials: false
 
       - name: Setup Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
 
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: wheels-${{ matrix.os }}
+          pattern: wheels-${{ matrix.platform.name }}-*
+          merge-multiple: true
           path: dist
 
       - name: Install wheel
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+        shell: bash
         run: |
-          python_version=$(python -c "import sys; print('cp{}{}'.format(sys.version_info.major, sys.version_info.minor))")
-          wheel_file=$(ls dist/*$python_version*.whl)
-          pip install $wheel_file
+          python -m pip install --no-index --no-deps --find-links dist pye57
+          python -m pip install pye57 pytest
 
-      - name: Install wheel(Windows)
-        if: matrix.os == 'windows-2022'
-        shell: pwsh
-        run: |
-          $python_version = (python -c "import sys; print('cp{}{}'.format(sys.version_info.major, sys.version_info.minor))").Trim()
-          $wheel_file = Get-ChildItem -Path dist -Filter "*$python_version*.whl" | Select-Object -First 1
-          python -m pip install $wheel_file.FullName
+      - name: Run tests
+        run: python -m pytest tests
 
-      - name: Verify installation
-        run: |
-          pip install pytest
-          python -m pytest tests
+  make_sdist:
+    name: Make sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Build SDist
+        run: pipx run build --sdist
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+          if-no-files-found: error
 
   upload_all:
-    name: Upload to pypi
-    needs: [build_wheels, make_sdist]
+    name: Upload to PyPI
+    needs: [source_build, build_wheels, test_wheels, make_sdist]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: wheels-ubuntu-latest
+          pattern: wheels-*
+          merge-multiple: true
           path: dist
 
-      - uses: actions/download-artifact@v8
-        with:
-          name: wheels-windows-2022
-          path: dist
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: wheels-macos-latest
-          path: dist
-
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: sdist
           path: dist
 
-      - uses: pypa/gh-action-pypi-publish@v1.14.3
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
         with:
           user: __token__
           password: ${{ secrets.pypi_password }}
