@@ -115,6 +115,16 @@ cd pye57
 python -m pip install .
 ```
 
+### Building against an installed libE57Format
+
+By default the vendored libE57Format submodule is compiled into the extension.
+To link against an installed libE57Format shared library instead, set
+`PYE57_USE_SYSTEM_LIBE57FORMAT=1`:
+
+```Bash
+PYE57_USE_SYSTEM_LIBE57FORMAT=1 python -m pip install .
+```
+
 ### Uninstalling
 
 Use pip again
